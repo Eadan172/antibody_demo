@@ -1,0 +1,65 @@
+{
+  "timestamp": "2026-02-27T10:44:31.264980",
+  "summary": {
+    "total_input": 1000,
+    "passed_count": 5,
+    "pass_rate": "0.5%"
+  },
+  "top_candidates": [
+    {
+      "rank": 1,
+      "id": "AB_0549",
+      "sequence": "EVQLVESGGGLVQPGGSLRLSCAASGFTFDDYAMHWVRQAPGKGLEWVSAITWNSGHIDYADSVEGRFTISRDNAKNSLYLQMNSLRAEDTALYYCAK",
+      "stability_score": 89.0,
+      "solubility_score": 99.0,
+      "immunogenicity_score": 29.0,
+      "binding_affinity": 0.59,
+      "composite_score": 81.78
+    },
+    {
+      "rank": 2,
+      "id": "AB_0548",
+      "sequence": "EVQLVESGGGLVQPGGSLRLSCAASGFTFDDYAMHWVRQAPGKGLEWVSAITWNSGHIDYADSVEGRFTISRDNAKNSLYLQMNSLRAEDTALYYCAK",
+      "stability_score": 88.0,
+      "solubility_score": 98.0,
+      "immunogenicity_score": 28.0,
+      "binding_affinity": 0.58,
+      "composite_score": 81.56
+    },
+    {
+      "rank": 3,
+      "id": "AB_0547",
+      "sequence": "EVQLVESGGGLVQPGGSLRLSCAASGFTFDDYAMHWVRQAPGKGLEWVSAITWNSGHIDYADSVEGRFTISRDNAKNSLYLQMNSLRAEDTALYYCAK",
+      "stability_score": 87.0,
+      "solubility_score": 97.0,
+      "immunogenicity_score": 27.0,
+      "binding_affinity": 0.57,
+      "composite_score": 81.34
+    },
+    {
+      "rank": 4,
+      "id": "AB_0546",
+      "sequence": "EVQLVESGGGLVQPGGSLRLSCAASGFTFDDYAMHWVRQAPGKGLEWVSAITWNSGHIDYADSVEGRFTISRDNAKNSLYLQMNSLRAEDTALYYCAK",
+      "stability_score": 86.0,
+      "solubility_score": 96.0,
+      "immunogenicity_score": 26.0,
+      "binding_affinity": 0.56,
+      "composite_score": 81.12
+    },
+    {
+      "rank": 5,
+      "id": "AB_0545",
+      "sequence": "EVQLVESGGGLVQPGGSLRLSCAASGFTFDDYAMHWVRQAPGKGLEWVSAITWNSGHIDYADSVEGRFTISRDNAKNSLYLQMNSLRAEDTALYYCAK",
+      "stability_score": 85.0,
+      "solubility_score": 95.0,
+      "immunogenicity_score": 25.0,
+      "binding_affinity": 0.55,
+      "composite_score": 80.9
+    }
+  ],
+  "recommendations": [
+    "优先推进候选抗体 AB_0549（综合评分: 81.8）",
+    "优先推进候选抗体 AB_0548（综合评分: 81.6）",
+    "优先推进候选抗体 AB_0547（综合评分: 81.3）"
+  ]
+}
