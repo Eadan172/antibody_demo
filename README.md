@@ -31,8 +31,8 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/Eadan172/antibody-ai-demo.git
-cd antibody-ai-demo
+git clone https://github.com/Eadan172/antibody_demo.git
+cd antibody_demo
 
 # 安装依赖（如有）
 pip install -r requirements.txt
