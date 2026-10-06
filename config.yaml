@@ -1,32 +1,33 @@
-# 抗体虚拟筛选系统配置文件
-# 作者：Eadan172
+# 抗体候选设计流水线配置
+# API Key 不要写在这里，请放在项目根目录的 .env（LLM_API_KEY）。
 
-# ==================== 筛选阈值 ====================
-# 稳定性阈值：低于此值的抗体将被过滤（0-100，越高越稳定）
-stability_threshold: 75.0
+llm:
+  # OpenAI 兼容接口。DeepSeek / 通义 / Moonshot / 自建网关只要兼容 /chat/completions 即可。
+  # 示例：
+  #   https://api.openai.com/v1          模型 gpt-4o-mini 或 gpt-4o
+  #   https://api.deepseek.com           模型 deepseek-chat
+  #   https://dashscope.aliyuncs.com/compatible-mode/v1   模型 qwen-plus
+  base_url: https://api.openai.com/v1
+  model: gpt-4o-mini
+  temperature: 0.4
+  timeout_seconds: 180
+  # 单次回复上限。若服务商不支持该参数，程序会自动去掉后重试。
+  max_tokens: 12000
 
-# 溶解度阈值：低于此值的抗体将被过滤（0-100，越高溶解度越好）
-solubility_threshold: 60.0
+pipeline:
+  # 输入文件未写明数量时使用。示例输入里写了更小的数字，以输入文件为准。
+  default_n_per_route_per_target: 6
+  design_batch_size: 3
+  routes:
+    - id: boltz
+      prefix: BLZ
+      expert: 博兹
+      title: Boltz·MSA
+    - id: protenix
+      prefix: PRX
+      expert: 普腾
+      title: Protenix·MSA
 
-# 免疫原性阈值：高于此值的抗体将被过滤（0-100，越低免疫原性风险越小）
-immunogenicity_threshold: 30.0
-
-# ==================== 输出设置 ====================
-# Top-K：输出评分最高的K个抗体
-top_k: 5
-
-# 批处理大小：每批处理的数据量（用于大数据量场景）
-batch_size: 100
-
-# ==================== 评分权重 ====================
-# 综合评分 = 稳定性*0.3 + 溶解度*0.25 + (100-免疫原性)*0.25 + 亲和力*0.2
-weights:
-  stability: 0.30
-  solubility: 0.25
-  immunogenicity: 0.25
-  binding_affinity: 0.20
-
-# ==================== 日志设置 ====================
-logging:
-  level: INFO  # DEBUG, INFO, WARNING, ERROR
-  format: "%(asctime)s - %(levelname)s - %(message)s"
+compute:
+  # 本地结构/计算程序单次调用超时（秒）
+  timeout_seconds: 3600
