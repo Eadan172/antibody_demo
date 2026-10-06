@@ -1,21 +1,127 @@
-MIT License
+Antibody Workflow Non-Commercial License 1.0
 
-Copyright (c) 2026 Eadan172
+Copyright (c) 2026 Eadan172. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+IMPORTANT: This is a source-available license, not an open-source license as
+defined by the Open Source Initiative.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Definitions
+
+"Software" means the source code, documentation, examples, configuration
+files, and other materials distributed with this license.
+
+"Covered Work" means:
+
+  a. the Software or any substantial portion of it;
+  b. any copy, modification, adaptation, translation, port, extension, or
+     derivative work of the Software; and
+  c. any implementation created by copying, translating, transforming, or
+     materially adapting the Software's protectable source-code expression,
+     structure, sequence, organization, or implementation details, even if
+     names, formatting, programming language, or superficial structure have
+     been changed.
+
+An independently created implementation based only on unprotected ideas,
+algorithms, interfaces, behavior, or functionality is not a Covered Work
+unless applicable copyright law provides otherwise. An automated code
+similarity score alone does not determine whether a work is covered; actual
+copying, derivation, and substantial similarity of protected expression are
+the relevant factors.
+
+"Commercial Use" means any use primarily intended for or directed toward
+commercial advantage, monetary compensation, or the operation of a
+for-profit business. It includes, without limitation:
+
+  a. selling, licensing, or charging for a Covered Work;
+  b. offering a Covered Work or its output as a paid product, hosted service,
+     software-as-a-service, consulting deliverable, or managed service;
+  c. using a Covered Work internally for the operations, research,
+     development, or competitive advantage of a for-profit entity;
+  d. bundling a Covered Work with a commercial product or service;
+  e. using a Covered Work to train, fine-tune, evaluate, or operate a model or
+     system intended for commercial use; or
+  f. removing, disguising, or rewriting the Software in order to avoid the
+     restrictions of this license.
+
+"Non-Commercial Purpose" means personal study, academic research, teaching,
+evaluation, or use by a charitable or public-interest organization, provided
+that the use is not performed for commercial advantage or compensation and
+is not performed for or on behalf of a for-profit entity.
+
+2. Non-Commercial Grant
+
+Subject to all terms of this license, the copyright holder grants you a
+limited, worldwide, non-exclusive, non-transferable, revocable license to
+use, reproduce, inspect, and modify the Software solely for a
+Non-Commercial Purpose.
+
+You may distribute a Covered Work solely for a Non-Commercial Purpose if:
+
+  a. you provide the complete corresponding source code;
+  b. you retain all copyright, attribution, and license notices;
+  c. you include this license without modification;
+  d. you clearly identify your changes; and
+  e. you do not impose terms that permit Commercial Use.
+
+3. Commercial Use Prohibited
+
+You may not make any Commercial Use of the Software or a Covered Work without
+separate prior written permission from the copyright holder.
+
+No permission is granted to sell, sublicense for commercial use, monetize,
+commercially host, or commercially exploit the Software, a Covered Work, or
+services substantially based on either of them.
+
+Commercial permission, if any, must be granted in a separate written
+agreement signed by the copyright holder. Silence, public availability of
+the source code, acceptance of contributions, or failure to enforce a term
+in one instance does not constitute commercial permission.
+
+4. Attribution and Notices
+
+You must not remove or obscure copyright, attribution, authorship, provenance,
+or license notices. Publicly distributed modifications must state that they
+are modified and must not suggest endorsement by the original author.
+
+5. Contributions
+
+Unless a separate written agreement states otherwise, any contribution
+intentionally submitted to this project may be distributed by the copyright
+holder under this license and under separate commercial terms. You represent
+that you have the right to submit the contribution.
+
+6. No Trademark or Patent License
+
+This license grants no rights to names, logos, trademarks, service marks, or
+patents. No use may imply affiliation with or endorsement by the copyright
+holder.
+
+7. Termination
+
+Your rights under this license terminate automatically when you violate any
+term. Upon termination, you must stop using and distributing all Covered
+Works and delete copies in your possession or control, except where retention
+is required by law.
+
+The copyright holder may reinstate your rights in writing. Sections 3 through
+9 survive termination to the extent applicable.
+
+8. Disclaimer of Warranty
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. YOU BEAR ALL RISK
+ARISING FROM USE OF THE SOFTWARE.
+
+9. Limitation of Liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE COPYRIGHT HOLDER AND CONTRIBUTORS
+WILL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN
+CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE
+SOFTWARE OR ITS USE.
+
+10. Severability
+
+If any provision is held unenforceable, it will be limited or removed only to
+the minimum extent necessary, and the remaining provisions will continue in
+effect.

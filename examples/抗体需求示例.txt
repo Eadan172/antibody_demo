@@ -1,0 +1,31 @@
+---config
+[project]
+name = cldn6-antibody-discovery
+output_dir = outputs
+language = zh-CN
+research_queries =
+    CLDN6 antibody cancer specificity
+    CLDN6 CLDN9 antibody cross-reactivity
+
+# 可选：取消下方注释并替换路径，即可调用已安装的本地软件。
+# [local_tool:structure_predictor]
+# command = /path/to/predictor predict --input {input} --out_dir {output_dir}
+# timeout = 7200
+
+# 可选：HTTP 计算服务会收到需求、分析和候选的 JSON。
+# [api_tool:structure_service]
+# url = https://example.org/api/predict
+# method = POST
+# timeout = 1800
+# header_authorization = Bearer ${STRUCTURE_API_KEY}
+---end
+
+请针对 CLDN6 设计 6 条全人源候选抗体，优先考虑卵巢癌 ADC。
+
+要求：
+1. 必须重点区分 CLDN6 与 CLDN9，并同时评估 CLDN3、CLDN4 的潜在交叉反应。
+2. 覆盖至少两个胞外表位策略，优先 ECL2；保留一个低效应 IgG4 或双抗模块候选。
+3. 目标种属为人和食蟹猴；如公开证据不足，请明确列为待验证，不要猜测。
+4. 检查 CDR 区 N-糖基化、脱酰胺、异构化、氧化及聚集风险。
+5. 没有真实结构计算结果时不得给出虚构的 iPTM、pLDDT、KD 或结合能。
+6. 输出候选序列、风险分层、后续结构计算方案和湿实验验证方案。

@@ -1,175 +1,212 @@
-# antibody_demo
-基于多维度理化特征的抗体药物快速筛选工具
-# 抗体药物虚拟筛选系统
+# antibody-workflow
 
-> 🧬 基于多维度理化特征的抗体药物快速筛选工具  
-> 👤 作者：Eadan172  
-> ⏱️ 处理1000条数据仅需10秒
+从一份抗体需求文本开始，整理出调研、候选设计、计算记录和最终报告。
 
----
+这个项目原来只是一个理化指标筛选 Demo。后来实际做项目时发现，真正费时间的往往
+不是最后那一步排序，而是前面的需求拆解、资料核对，以及把不同软件的结果收拢到一起。
+所以在保留旧筛选脚本的同时，补了一套可以从头跑到尾的命令行工作流。
 
-📋 项目简介
+```text
+需求文件
+   │
+   ├── 需求拆解
+   ├── PubMed 检索
+   ├── 候选设计
+   ├── 本地程序 / API 计算（可选）
+   └── 快筛、汇总与报告
+```
 
-本项目是一个轻量级的抗体药物虚拟筛选工具，通过综合评估抗体的稳定性、溶解度、免疫原性和亲和力，从大量候选抗体中快速筛选出最优候选。
+> 这不是“一键得到可用抗体”的黑盒。没有实际运行过的计算会写成“未计算”，
+> 模型生成的序列也只会标记为“未验证设计序列”。
 
-核心特点：
-- ✅ 防御性编程：完善的错误处理和日志记录
-- ✅ 可配置化：所有阈值参数外置，灵活调整
-- ✅ 易扩展：模块化设计，支持功能快速迭代
-- ✅ 产品化思维：完整的输入-处理-输出闭环
+## 快速开始
 
----
+需要 Python 3.10 或更新版本。运行时不依赖第三方 Python 包。
 
-🚀 快速开始
-
-### 环境要求
-
-- Python 3.8+
-- 依赖包：无第三方依赖（仅使用标准库）
-
-### 安装
+### Linux / macOS
 
 ```bash
-# 克隆仓库
 git clone https://github.com/Eadan172/antibody_demo.git
 cd antibody_demo
-
-# 安装依赖（如有）
-pip install -r requirements.txt
+./run.sh examples/抗体需求示例.txt
 ```
 
-### 运行
+### Windows
+
+```bat
+git clone https://github.com/Eadan172/antibody_demo.git
+cd antibody_demo
+run.bat examples\抗体需求示例.txt
+```
+
+第一次运行会：
+
+1. 在项目目录创建 `.venv`；
+2. 询问 LLM API Key；
+3. 将 Key 保存到本机 `.env`；
+4. 开始处理需求文件。
+
+`.env` 已加入 `.gitignore`，不会随代码提交。之后再次运行时不会重复询问。
+
+默认配置使用 OpenAI 兼容接口：
+
+```dotenv
+LLM_API_KEY=...
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-5-mini
+```
+
+如果使用其他兼容服务，修改 `.env` 中的接口地址和模型名即可。
+
+## 怎么写需求
+
+只有自然语言也能运行。例如：
+
+```text
+请针对目标蛋白设计 6 条全人源候选抗体，优先考虑 ADC。
+
+要求：
+- 覆盖两个不同胞外表位；
+- 检查近缘蛋白交叉反应；
+- 目标种属为人和食蟹猴；
+- 检查 CDR 区 PTM 与聚集风险；
+- 没有真实计算结果时，不要给出结构分数或亲和力数值。
+```
+
+示例文件在 [`examples/抗体需求示例.txt`](examples/抗体需求示例.txt)。
+
+### 需要接计算软件时
+
+在正文前加一段配置。下面的路径只是占位，替换成自己机器上的实际命令：
+
+```ini
+---config
+[project]
+name = my-antibody-project
+output_dir = outputs
+research_queries =
+    target antibody cancer
+    target homolog cross-reactivity
+
+[local_tool:structure_predictor]
+command = /path/to/predictor predict --input {input} --out_dir {output_dir}
+timeout = 7200
+---end
+
+这里开始写抗体需求……
+```
+
+命令里可以使用：
+
+| 占位符 | 实际内容 |
+|---|---|
+| `{input}` | 需求文件的绝对路径 |
+| `{output_dir}` | 本次运行的 `computations/` 目录 |
+| `{project_dir}` | 代码仓库目录 |
+
+本地程序不会经过 shell 拼接执行。stdout、stderr、返回码都会保留，方便事后排查。
+
+### 使用 HTTP 计算接口
+
+```ini
+[api_tool:structure_service]
+url = https://example.org/api/predict
+method = POST
+timeout = 1800
+header_authorization = Bearer ${STRUCTURE_API_KEY}
+```
+
+接口会收到需求、需求分析和候选清单组成的 JSON。响应原文会存入本次运行目录。
+额外密钥建议放进环境变量，不要直接写在需求文件里。
+
+## 会生成什么
+
+每次运行使用单独的时间戳目录，不会覆盖前一次结果：
+
+```text
+outputs/<项目名>-<时间>/
+├── 00_需求分析与任务拆解.md
+├── 01_靶点调研报告.md
+├── 02_候选设计报告.md
+├── 02b_候选可变区序列.fasta
+├── 03_候选汇总清单.md
+├── 04_计算与快筛报告.md
+├── 05_综合评估报告.md
+├── 06_综合评估报告.html
+├── overview.md
+├── run_manifest.json
+├── computations/
+└── raw/
+```
+
+平时先看 `overview.md` 和 `05_综合评估报告.md` 即可。需要追查某条结论时，再去：
+
+- `raw/` 查看各阶段的原始 JSON；
+- `computations/` 查看计算程序原始输出；
+- `run_manifest.json` 查看本次使用的模型、接口和任务文件。
+
+API Key 不会写入运行清单。
+
+## 结果可信度
+
+工作流刻意把信息分成四类：
+
+| 类型 | 处理方式 |
+|---|---|
+| 公开资料 | 来自实时 PubMed 检索，保留 PMID 链接 |
+| 模型推断 | 明确写成预测、假设或待核验 |
+| 计算结果 | 只采用成功执行的本地程序或 API 返回值 |
+| 实验结论 | 本项目不生成，只提供后续验证建议 |
+
+如果检索不到足够资料，报告会留下证据缺口；如果计算程序没有安装，流程仍可完成，
+但对应部分不会假装已经算过。
+
+## 项目结构
+
+```text
+antibody_workflow/
+├── config.py       # 任务文件和 .env
+├── llm.py          # OpenAI 兼容接口
+├── research.py     # PubMed 检索
+├── tools.py        # 本地命令与 HTTP API
+├── pipeline.py     # 主流程
+└── reporting.py    # Markdown / HTML 输出
+```
+
+旧版快速筛选逻辑仍在 `antibody_virtual_screening.py`，已有调用不需要迁移。
+
+## 测试
+
+新工作流：
 
 ```bash
-# 使用默认配置运行
-python antibody_virtual_screening.py
-
-# 查看输出结果
-cat screening_report.json
+python -m unittest discover -s tests -v
 ```
 
----
-
-📁 项目结构
-
-```
-antibody_ai_demo/
-├── antibody_virtual_screening.py    # 核心代码（204行）
-├── config.yaml                      # 配置文件
-├── requirements.txt                 # 依赖列表
-├── tests/                           # 测试用例
-│   ├── test_data_loader.py
-│   ├── test_screening.py
-│   └── test_report.py
-└── README.md                        # 本文件
-```
-
----
-
-⚙️ 配置说明
-
-编辑 `config.yaml` 调整筛选参数：
-
-```yaml
-# 筛选阈值
-stability_threshold: 75.0       # 稳定性最低要求（0-100）
-solubility_threshold: 60.0      # 溶解度最低要求（0-100）
-immunogenicity_threshold: 30.0  # 免疫原性上限（越低越好）
-
-# 输出设置
-top_k: 5                        # 输出Top-K结果
-batch_size: 100                 # 批处理大小
-```
-
----
-
-📊 输入/输出格式
-
-### 输入格式（JSON）
-
-```json
-{
-  "id": "AB_0001",
-  "sequence": "EVQLVESGGGLVQPGGSLRLSCAAS...",
-  "stability_score": 85.0,
-  "solubility_score": 70.0,
-  "immunogenicity_score": 25.0,
-  "binding_affinity": 0.5
-}
-```
-
-### 输出格式（JSON）
-
-```json
-{
-  "timestamp": "2024-01-15T10:30:00",
-  "summary": {
-    "total_input": 1000,
-    "passed_count": 50,
-    "pass_rate": "5.0%"
-  },
-  "top_candidates": [
-    {
-      "rank": 1,
-      "id": "AB_0085",
-      "composite_score": 92.5
-    }
-  ],
-  "recommendations": [
-    "优先推进候选抗体 AB_0085（综合评分: 92.5）"
-  ]
-}
-```
-
----
-
-🧪 测试
+旧版兼容测试：
 
 ```bash
-# 运行所有测试
-python -m pytest tests/
-
-# 运行单个测试
-python -m pytest tests/test_screening.py -v
+cd tests
+python test_data_loader.py
+python test_screening.py
+python test_report.py
 ```
 
----
+## 已知限制
 
-📈 性能指标
+- 文献检索目前只接了 PubMed；
+- LLM 服务需要兼容 `/chat/completions` 接口；
+- 不同计算软件的输入格式差异很大，目前通过命令或 HTTP 适配，没有内置专用转换器；
+- 生成序列只能作为下一轮计算和实验的起点。
 
-| 数据规模 | 处理时间 | 内存占用 |
-|----------|----------|----------|
-| 1,000条  | ~0.5秒   | ~10MB    |
-| 10,000条 | ~3秒     | ~50MB    |
-| 100,000条| ~30秒    | ~200MB   |
+## License
 
----
+本项目采用 [Antibody Workflow Non-Commercial License 1.0](LICENSE)：
 
-🛣️ 扩展计划
+- 可以用于个人学习、教学、学术研究和非营利用途；
+- 禁止直接或间接商业使用；
+- 修改、翻译、重写以及基于本代码实质性改编的派生实现同样受限；
+- 商业授权需要获得版权所有者单独书面许可。
 
-- [ ] Web界面：让非技术同事也能使用
-- [ ] 数据库支持：从SQLite迁移到PostgreSQL
-- [ ] 可视化：增加筛选过程图表
-- [ ] API服务：封装成RESTful API
-- [ ] 大模型集成：自动生成推荐理由
-
----
-
-🤝 贡献指南
-
-欢迎提交Issue和PR！
-
-1. Fork本仓库
-2. 创建功能分支：`git checkout -b feature/xxx`
-3. 提交更改：`git commit -m 'Add xxx'`
-4. 推送分支：`git push origin feature/xxx`
-5. 创建Pull Request
-
----
-
-## 📄 许可证
-
-MIT License
-
----
-
+这是一份“源码可见”许可证，不是 OSI 定义下的开源许可证。仓库中过去曾以其他
+许可证发布的历史版本，其既有授权不因本次变更而自动撤销。
