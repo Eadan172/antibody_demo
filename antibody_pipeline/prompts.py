@@ -79,7 +79,7 @@ RESEARCH_USER = """根据需求做靶点调研，输出 JSON。这是文档《00
 }}
 """
 
-DESIGN_USER = """你负责「{expert}」路线（{title}）的抗体可变区设计。只为下面这一个靶点设计 {batch} 条新候选。
+DESIGN_USER = """你负责本次任务中的设计路线「{name}」。它只是一条互补的序列设计策略，不是某个软件或商品的输出。不要使用用户需求里没有出现的商品名、公司名或软件品牌作为路线名或候选前缀。只为下面这一个靶点设计 {batch} 条新候选。
 
 靶点档案：
 {dossier}
@@ -134,12 +134,3 @@ DESIGN_USER = """你负责「{expert}」路线（{title}）的抗体可变区设
 - 不要输出 iPTM/pLDDT。
 - candidates 长度必须等于 {batch}。
 """
-
-BOLTZ_FOCUS = (
-    "偏膜近端、内化表位和 ADC 适用格式；CDR-H3 长度拉开；"
-    "格式覆盖 IgG1、IgG4-S228P、scFv-Fc、Fab 中的若干种。"
-)
-PROTENIX_FOCUS = (
-    "偏功能表位覆盖、效应功能格式（可注明 ADCC/ADCP 的 Fc 设计选择）和特异性机制；"
-    "与另一条路线的 CDR-H3、表位侧重点不要雷同。"
-)

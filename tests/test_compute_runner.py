@@ -7,10 +7,10 @@ from antibody_pipeline.models import Candidate, ComputeTool
 
 def _candidate() -> Candidate:
     return Candidate(
-        id="BLZ-HER2-01",
-        route="Boltz·MSA",
-        route_label="BLZ",
-        expert="博兹",
+        id="A-HER2-01",
+        route="路线A",
+        route_label="A",
+        expert="路线A",
         target="HER2",
         epitope="远膜",
         format="IgG1",
@@ -22,14 +22,14 @@ def _candidate() -> Candidate:
 
 
 def test_parse_metrics_reads_common_envelopes():
-    data = {"results": [{"id": "BLZ-HER2-01", "iptm": 0.81, "plddt": 88, "ignored": 1}]}
+    data = {"results": [{"id": "A-HER2-01", "iptm": 0.81, "plddt": 88, "ignored": 1}]}
     metrics = parse_metrics(data)
-    assert metrics["BLZ-HER2-01"]["iptm"] == 0.81
-    assert "ignored" not in metrics["BLZ-HER2-01"]
+    assert metrics["A-HER2-01"]["iptm"] == 0.81
+    assert "ignored" not in metrics["A-HER2-01"]
 
 
 def test_missing_binary_is_skipped():
-    tool = ComputeTool(name="protenix", kind="cli", address="/tmp/does-not-exist-protenix")
+    tool = ComputeTool(name="fold_tool", kind="cli", address="/tmp/does-not-exist-fold")
     result = run_cli_tool(tool, Path("missing.fasta"), Path("."), timeout=5)
     assert result.status == "skipped"
     assert result.metrics_by_id == {}
@@ -40,11 +40,11 @@ def test_cli_json_is_applied(tmp_path: Path):
     script.write_text(
         "import json, pathlib, sys\n"
         "outdir = pathlib.Path(sys.argv[2])\n"
-        "(outdir / 'results.json').write_text(json.dumps({'results': [{'id': 'BLZ-HER2-01', 'iptm': 0.77, 'plddt': 81}]}), encoding='utf-8')\n",
+        "(outdir / 'results.json').write_text(json.dumps({'results': [{'id': 'A-HER2-01', 'iptm': 0.77, 'plddt': 81}]}), encoding='utf-8')\n",
         encoding="utf-8",
     )
     fasta = tmp_path / "in.fasta"
-    fasta.write_text(">BLZ-HER2-01_VH\nAAAA\n", encoding="utf-8")
+    fasta.write_text(">A-HER2-01_VH\nAAAA\n", encoding="utf-8")
     work = tmp_path / "work"
     work.mkdir()
     tool = ComputeTool(
@@ -58,7 +58,7 @@ def test_cli_json_is_applied(tmp_path: Path):
     tool.address = "python3"
     result = run_cli_tool(tool, fasta, work, timeout=20)
     assert result.status == "ok"
-    assert result.metrics_by_id["BLZ-HER2-01"]["plddt"] == 81
+    assert result.metrics_by_id["A-HER2-01"]["plddt"] == 81
     candidate = _candidate()
     from antibody_pipeline.compute_runner import run_compute_tools
 

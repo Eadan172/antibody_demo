@@ -23,12 +23,24 @@ CD20
 
 计算软件
 # 这一行忽略
-protenix | cli | /opt/protenix/bin/protenix | {program} predict --input {fasta} --out {outdir} |
-boltz | api | http://127.0.0.1:8080/predict | | secret-token
+fold_tool | cli | /opt/fold/bin/predict | {program} --input {fasta} --out {outdir} |
+fold_api | api | http://127.0.0.1:8080/predict | | secret-token
 """
     hints = parse_requirement_hints(text, default_n=6)
     assert hints["n_per_route_per_target"] == 4
-    assert [tool.name for tool in hints["compute_tools"]] == ["protenix", "boltz"]
+    assert [tool.name for tool in hints["compute_tools"]] == ["fold_tool", "fold_api"]
     assert hints["compute_tools"][0].kind == "cli"
     assert hints["compute_tools"][1].kind == "api"
     assert hints["compute_tools"][1].token == "secret-token"
+
+
+def test_custom_design_routes_override_defaults():
+    text = """
+设计路线
+内化优先 | IN | 偏膜近端与快速内化
+阻断优先 | BK | 偏功能阻断
+"""
+    hints = parse_requirement_hints(text, default_n=6)
+    assert [item["name"] for item in hints["routes"]] == ["内化优先", "阻断优先"]
+    assert [item["prefix"] for item in hints["routes"]] == ["IN", "BK"]
+    assert "内化" in hints["routes"][0]["focus"]

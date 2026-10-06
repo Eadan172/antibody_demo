@@ -1,4 +1,4 @@
-"""要求分析、靶点调研、双路线设计。"""
+"""要求分析、靶点调研、按本次路线分批设计。"""
 
 from __future__ import annotations
 
@@ -6,14 +6,7 @@ from typing import Callable, Dict, List, Sequence
 
 from antibody_pipeline.models import Candidate, RequirementSpec, ResearchPack, TargetDossier
 from antibody_pipeline.parse_input import parse_requirement_hints, slug_target
-from antibody_pipeline.prompts import (
-    BOLTZ_FOCUS,
-    DESIGN_USER,
-    PROTENIX_FOCUS,
-    RESEARCH_USER,
-    SPEC_USER,
-    SYSTEM,
-)
+from antibody_pipeline.prompts import DESIGN_USER, RESEARCH_USER, SPEC_USER, SYSTEM
 from antibody_pipeline.sequence_analysis import chain_problem, clean_sequence
 
 LogFn = Callable[[str], None]
@@ -182,17 +175,25 @@ def research_targets(client, spec: RequirementSpec, log: LogFn) -> ResearchPack:
     return pack
 
 
-def _focus(route_id: str) -> str:
-    return BOLTZ_FOCUS if route_id == "boltz" else PROTENIX_FOCUS
+def _route_name(route: dict) -> str:
+    return str(route.get("name") or route.get("expert") or route.get("title") or "设计路线")
+
+
+def _focus(route: dict) -> str:
+    text = str(route.get("focus") or "").strip()
+    if text:
+        return text
+    return "按用户需求做互补设计。不要把候选说成用户未指定的软件或商品输出。"
 
 
 def _normalize_candidate(raw: dict, route: dict, target: TargetDossier, index: int) -> Candidate:
     prefix = route["prefix"]
+    name = _route_name(route)
     candidate = Candidate(
         id=f"{prefix}-{target.slug}-{index:02d}",
-        route=route["title"],
+        route=str(route.get("title") or name),
         route_label=route["prefix"],
-        expert=route["expert"],
+        expert=name,
         target=target.name,
         epitope=str(raw.get("epitope") or ""),
         format=str(raw.get("format") or ""),
@@ -261,8 +262,7 @@ def design_one_batch(client, spec: RequirementSpec, route: dict, target: TargetD
     data = client.chat_json(
         SYSTEM,
         DESIGN_USER.format(
-            expert=route["expert"],
-            title=route["title"],
+            name=_route_name(route),
             batch=batch,
             dossier=dossier,
             species="；".join(spec.species),
@@ -270,7 +270,7 @@ def design_one_batch(client, spec: RequirementSpec, route: dict, target: TargetD
             formats="；".join(spec.formats),
             modalities="；".join(spec.modalities),
             extra=spec.extra_constraints or "无",
-            focus=_focus(route["id"]),
+            focus=_focus(route),
             used_h3="、".join(used_h3) or "无",
             used_vh="、".join(used_vh) or "无",
         ),
@@ -288,10 +288,10 @@ def design_one_batch(client, spec: RequirementSpec, route: dict, target: TargetD
         candidate = _normalize_candidate(raw=row, route=route, target=target, index=1)
         issues = _problems(candidate)
         if issues:
-            log(f"{route['expert']} / {target.name} 有一条未通过序列检查：{'；'.join(issues)}")
+            log(f"{_route_name(route)} / {target.name} 有一条未通过序列检查：{'；'.join(issues)}")
             continue
         if candidate.cdr_h3 in used_h3:
-            log(f"{route['expert']} / {target.name} 的 CDR-H3 与已有候选重复，已丢弃一条。")
+            log(f"{_route_name(route)} / {target.name} 的 CDR-H3 与已有候选重复，已丢弃一条。")
             continue
         if not candidate.strategy:
             candidate.strategy = strategy
@@ -300,7 +300,8 @@ def design_one_batch(client, spec: RequirementSpec, route: dict, target: TargetD
 
 
 def design_all(client, spec: RequirementSpec, targets: List[TargetDossier], routes: List[dict], batch_size: int, log: LogFn):
-    log("阶段：双路线设计。博兹（Boltz·MSA 风格）与普腾（Protenix·MSA 风格）按靶点分批生成可变区。")
+    names = "、".join(_route_name(route) for route in routes) or "未配置路线"
+    log(f"阶段：分路线设计。本次路线为 {names}。这些名称来自需求或配置，只表示互补策略，不代表特定软件。")
     notes: Dict[str, str] = {}
     strategies: Dict[str, str] = {}
     candidates: List[Candidate] = []
@@ -311,7 +312,7 @@ def design_all(client, spec: RequirementSpec, targets: List[TargetDossier], rout
     for target in targets:
         for route in routes:
             need = spec.n_per_route_per_target
-            log(f"设计 {route['expert']} × {target.name}，目标 {need} 条。")
+            log(f"设计 {_route_name(route)} × {target.name}，目标 {need} 条。")
             guard = 0
             while counters[(route["id"], target.slug)] < need and guard < need + 2:
                 guard += 1
@@ -324,7 +325,7 @@ def design_all(client, spec: RequirementSpec, targets: List[TargetDossier], rout
                 if strategy:
                     strategies[f"{route['id']}:{target.slug}"] = strategy
                 if not fresh:
-                    log(f"{route['expert']} × {target.name} 本批没有合格序列，停止补齐。")
+                    log(f"{_route_name(route)} × {target.name} 本批没有合格序列，停止补齐。")
                     break
                 for candidate in fresh:
                     counters[(route["id"], target.slug)] += 1
@@ -339,5 +340,5 @@ def design_all(client, spec: RequirementSpec, targets: List[TargetDossier], rout
                     if candidate.vh_germline:
                         used_vh.append(candidate.vh_germline)
             got = counters[(route["id"], target.slug)]
-            log(f"{route['expert']} × {target.name} 得到 {got}/{need} 条。")
+            log(f"{_route_name(route)} × {target.name} 得到 {got}/{need} 条。")
     return candidates, notes, strategies

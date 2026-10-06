@@ -22,6 +22,7 @@ SECTION_NAMES = (
     "分子格式",
     "功能模态",
     "计算软件",
+    "设计路线",
     "每路线每靶点候选数",
 )
 
@@ -128,6 +129,31 @@ def slug_target(name: str) -> str:
     return slug[:16] or "TGT"
 
 
+def parse_routes(section: str) -> List[dict]:
+    """需求文件里的路线覆盖默认配置。没写则返回空列表，调用方再用配置。"""
+    routes = []
+    for raw in section.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = [part.strip() for part in re.split(r"[|｜]", line)]
+        if not parts or not parts[0]:
+            continue
+        name = parts[0]
+        prefix = parts[1] if len(parts) > 1 else ""
+        focus = parts[2] if len(parts) > 2 else ""
+        routes.append(
+            {
+                "id": f"route_{len(routes) + 1}",
+                "name": name,
+                "title": name,
+                "prefix": prefix,
+                "focus": focus,
+            }
+        )
+    return routes
+
+
 def parse_requirement_hints(text: str, default_n: int) -> dict:
     sections = split_sections(text)
     targets = parse_targets(sections.get("指定靶点", ""))
@@ -152,5 +178,6 @@ def parse_requirement_hints(text: str, default_n: int) -> dict:
         "formats_text": sections.get("分子格式", ""),
         "modalities_text": sections.get("功能模态", ""),
         "compute_tools": parse_compute_tools(sections.get("计算软件", "")),
+        "routes": parse_routes(sections.get("设计路线", "")),
         "sections": sections,
     }

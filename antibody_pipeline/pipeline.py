@@ -13,6 +13,7 @@ from antibody_pipeline.dedup import build_dedup
 from antibody_pipeline.demo_data import build_demo
 from antibody_pipeline.envfile import load_env_file
 from antibody_pipeline.render import render_fasta, write_reports
+from antibody_pipeline.routes import default_routes, normalize_routes, route_label_text, routes_from_candidates
 from antibody_pipeline.scoring import screen_all
 from antibody_pipeline.state import checkpoint_ready, load_checkpoint, save_checkpoint
 
@@ -40,10 +41,8 @@ def run_pipeline(
     config = load_config(config_path)
     pipeline_cfg = config.get("pipeline") or {}
     compute_cfg = config.get("compute") or {}
-    routes = pipeline_cfg.get("routes") or [
-        {"id": "boltz", "prefix": "BLZ", "expert": "博兹", "title": "Boltz·MSA"},
-        {"id": "protenix", "prefix": "PRX", "expert": "普腾", "title": "Protenix·MSA"},
-    ]
+    configured_routes = normalize_routes(pipeline_cfg.get("routes") or default_routes()) or default_routes()
+    routes = configured_routes
     default_n = int(pipeline_cfg.get("default_n_per_route_per_target") or 6)
     batch_size = int(pipeline_cfg.get("design_batch_size") or 3)
     timeout = int(compute_cfg.get("timeout_seconds") or 3600)
@@ -61,6 +60,7 @@ def run_pipeline(
     if demo:
         log("阶段：离线演示。不调用大模型，用内置占位靶点和序列写出全套文件。")
         n_demo = n_override or 2
+        routes = default_routes()
         spec, pack, candidates, route_notes, strategies = build_demo(n_demo)
         source_note = "本目录由 --demo 生成，序列和靶点档案都是占位数据，不能当设计结论。"
         text = input_path.read_text(encoding="utf-8") if input_path.is_file() else ""
@@ -71,13 +71,26 @@ def run_pipeline(
             if hints["compute_tools"]:
                 spec.compute_tools = hints["compute_tools"]
                 log(f"演示仍会尝试需求文件里的 {len(spec.compute_tools)} 个计算软件。")
-        save_checkpoint(state_dir, spec, pack, candidates, route_notes, strategies)
+        log(f"演示使用内置路线 {route_label_text(routes)}，不读取需求里的路线名称。")
+        save_checkpoint(state_dir, spec, pack, candidates, route_notes, strategies, routes)
     elif resume and checkpoint_ready(state_dir):
         log("阶段：从已有检查点继续，跳过要求分析、调研和序列设计。")
-        spec, pack, candidates, route_notes, strategies = load_checkpoint(state_dir)
+        spec, pack, candidates, route_notes, strategies, routes = load_checkpoint(state_dir)
+        if not routes:
+            routes = routes_from_candidates(candidates)
         source_note = "序列来自大模型设计或上一次运行的检查点；指标以本次序列规则和计算回传为准。"
+        log(f"继续使用路线 {route_label_text(routes)}。")
     else:
         text = input_path.read_text(encoding="utf-8")
+        from antibody_pipeline.parse_input import parse_requirement_hints
+
+        hints = parse_requirement_hints(text, default_n)
+        if hints["routes"]:
+            routes = normalize_routes(hints["routes"])
+            log(f"使用需求文件里的设计路线：{route_label_text(routes)}。")
+        else:
+            routes = configured_routes
+            log(f"需求文件没有指定设计路线，使用配置中的：{route_label_text(routes)}。")
         client = _make_client(config, base_url, model)
         from antibody_pipeline.stages import analyze_requirements, design_all, research_targets
 
@@ -89,8 +102,8 @@ def run_pipeline(
         candidates, route_notes, strategies = design_all(
             client, spec, pack.selected, routes, batch_size, log
         )
-        source_note = "序列由大模型按需求生成，尚未经过结构软件或湿实验确认。"
-        save_checkpoint(state_dir, spec, pack, candidates, route_notes, strategies)
+        source_note = "序列由大模型按本次路线要求生成，尚未经过结构软件或湿实验确认。"
+        save_checkpoint(state_dir, spec, pack, candidates, route_notes, strategies, routes)
         if not candidates:
             log("没有得到通过序列检查的候选，仍会写出说明性报告。")
 
@@ -107,7 +120,7 @@ def run_pipeline(
     for run in tools:
         log(f"计算 {run.name}：{run.status}。{run.detail}")
 
-    log("阶段：去冗余。比较两条路线的 VH、VL 和 CDR-H3，表位不同的配对只标注、不合并。")
+    log("阶段：去冗余。比较各设计路线的 VH、VL 和 CDR-H3，表位不同的配对只标注、不合并。")
     dedup = build_dedup(candidates)
     log("阶段：快筛。用序列规则复核 PTM、过滤 CDR 糖基化并打分。")
     screen_all(candidates)
@@ -123,6 +136,7 @@ def run_pipeline(
         strategies,
         phases,
         source_note,
+        routes,
     )
     latest = root / "output" / "LATEST.txt"
     latest.parent.mkdir(parents=True, exist_ok=True)

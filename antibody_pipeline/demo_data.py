@@ -95,7 +95,7 @@ def build_demo(n_per_route: int = 2):
     shared_l3 = "QQSYSTPYT"
     rows = [
         _candidate(
-            id="BLZ-HER2-01", route="Boltz·MSA", route_label="BLZ", expert="博兹", target="HER2",
+            id="A-HER2-01", route="路线A", route_label="A", expert="路线A", target="HER2",
             epitope="远膜端阻断", format="IgG1/κ", vh_kind="vh1", vl_kind="vl1",
             cdr_h3="GYSSGWYFDY", cdr_l3=shared_l3, kd_pred="预测 1–20 nM",
             specificity="演示：家族交叉风险中低", immunogenicity="低-中（预测）",
@@ -104,7 +104,7 @@ def build_demo(n_per_route: int = 2):
             function_score=8, specificity_score=7,
         ),
         _candidate(
-            id="BLZ-HER2-02", route="Boltz·MSA", route_label="BLZ", expert="博兹", target="HER2",
+            id="A-HER2-02", route="路线A", route_label="A", expert="路线A", target="HER2",
             epitope="EC 近膜内化", format="IgG1/κ", vh_kind="vh3", vl_kind="vl1",
             cdr_h3="DREGYYFDY", cdr_l3="QQYNYSPWT", kd_pred="预测 5–50 nM",
             specificity="演示", immunogenicity="中（预测）", aggregation="中（预测）",
@@ -113,7 +113,7 @@ def build_demo(n_per_route: int = 2):
             optimization="N→Q 后重筛", function_score=5, specificity_score=6,
         ),
         _candidate(
-            id="BLZ-EGFR-01", route="Boltz·MSA", route_label="BLZ", expert="博兹", target="EGFR",
+            id="A-EGFR-01", route="路线A", route_label="A", expert="路线A", target="EGFR",
             epitope="III 域", format="IgG4-S228P/κ", vh_kind="vh3", vl_kind="vl3",
             cdr_h3="GSSGWYFDY", cdr_l3="QQYGSSPYT", kd_pred="预测 2–30 nM",
             specificity="演示", immunogenicity="低（预测）", aggregation="低（预测）",
@@ -122,7 +122,7 @@ def build_demo(n_per_route: int = 2):
             function_score=7, specificity_score=7,
         ),
         _candidate(
-            id="BLZ-EGFR-02", route="Boltz·MSA", route_label="BLZ", expert="博兹", target="EGFR",
+            id="A-EGFR-02", route="路线A", route_label="A", expert="路线A", target="EGFR",
             epitope="近膜", format="Fab/κ", vh_kind="vh1", vl_kind="vl3",
             cdr_h3="DLWGGYYFDY", cdr_l3="QQYDNLPYT", kd_pred="预测 5–40 nM",
             specificity="演示", immunogenicity="低-中（预测）", aggregation="中（预测）",
@@ -131,16 +131,16 @@ def build_demo(n_per_route: int = 2):
             function_score=6, specificity_score=6,
         ),
         _candidate(
-            id="PRX-HER2-01", route="Protenix·MSA", route_label="PRX", expert="普腾", target="HER2",
+            id="B-HER2-01", route="路线B", route_label="B", expert="路线B", target="HER2",
             epitope="近膜端内化", format="IgG1/κ", vh_kind="vh3", vl_kind="vl1",
             cdr_h3="AREGYYSYFDY", cdr_l3=shared_l3, kd_pred="预测 1–10 nM",
-            specificity="演示：与博兹远膜候选表位不同", immunogenicity="低（预测）",
+            specificity="演示：与路线A远膜候选表位不同", immunogenicity="低（预测）",
             aggregation="低（预测）", tm="中高（预测）", ptm_note="H1 含 M",
-            strategy="演示：与 BLZ-HER2-01 共用轻链框架但表位假设不同",
+            strategy="演示：与 A-HER2-01 共用轻链框架但表位假设不同",
             optimization="不要与远膜候选合并", function_score=8, specificity_score=6,
         ),
         _candidate(
-            id="PRX-HER2-02", route="Protenix·MSA", route_label="PRX", expert="普腾", target="HER2",
+            id="B-HER2-02", route="路线B", route_label="B", expert="路线B", target="HER2",
             epitope="二聚界面", format="IgG1/κ", vh_kind="vh1", vl_kind="vl3",
             cdr_h3="GGSYFDY", cdr_l3="QQRSNWPYT", kd_pred="预测 1–15 nM",
             specificity="演示", immunogenicity="低-中（预测）", aggregation="低（预测）",
@@ -149,7 +149,7 @@ def build_demo(n_per_route: int = 2):
             function_score=7, specificity_score=7,
         ),
         _candidate(
-            id="PRX-EGFR-01", route="Protenix·MSA", route_label="PRX", expert="普腾", target="EGFR",
+            id="B-EGFR-01", route="路线B", route_label="B", expert="路线B", target="EGFR",
             epitope="III 域侧翼", format="scFv-Fc", vh_kind="vh3", vl_kind="vl1",
             cdr_h3="EGYYDSSGYYFDY", cdr_l3="QQANSFPLT", kd_pred="预测 3–30 nM",
             specificity="演示", immunogenicity="低（预测）", aggregation="scFv 需验证",
@@ -158,7 +158,7 @@ def build_demo(n_per_route: int = 2):
             function_score=6, specificity_score=6,
         ),
         _candidate(
-            id="PRX-EGFR-02", route="Protenix·MSA", route_label="PRX", expert="普腾", target="EGFR",
+            id="B-EGFR-02", route="路线B", route_label="B", expert="路线B", target="EGFR",
             epitope="近膜 ADC", format="IgG1/κ", vh_kind="vh1", vl_kind="vl3",
             cdr_h3="DYSYGGYYFDY", cdr_l3="QQYYSTPYT", kd_pred="预测 1–20 nM",
             specificity="演示", immunogenicity="低-中（预测）", aggregation="低-中（预测）",
@@ -203,13 +203,13 @@ def build_demo(n_per_route: int = 2):
         conclusion="演示流程已选定两个占位靶点，正式任务请去掉 --demo。",
     )
     notes = {
-        "boltz": "演示：博兹路线侧重内化与格式多样性。",
-        "protenix": "演示：普腾路线侧重表位分开，并与博兹共用一条轻链以展示去冗余。",
+        "route_a": "演示：路线A侧重内化与格式多样性。",
+        "route_b": "演示：路线B侧重表位分开，并与路线A共用一条轻链以展示去冗余。",
     }
     strategies = {
-        "boltz:HER2": "演示策略：一条阻断，一条带糖基化缺陷以便过滤。",
-        "boltz:EGFR": "演示策略：IgG4 与 Fab。",
-        "protenix:HER2": "演示策略：近膜与二聚界面，轻链与博兹有一对趋同。",
-        "protenix:EGFR": "演示策略：scFv-Fc 与 IgG1。",
+        "route_a:HER2": "演示策略：一条阻断，一条带糖基化缺陷以便过滤。",
+        "route_a:EGFR": "演示策略：IgG4 与 Fab。",
+        "route_b:HER2": "演示策略：近膜与二聚界面，轻链与路线A有一对趋同。",
+        "route_b:EGFR": "演示策略：scFv-Fc 与 IgG1。",
     }
     return spec, pack, rows, notes, strategies

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from antibody_pipeline.models import (
     Candidate,
@@ -24,7 +24,7 @@ def _load(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def save_checkpoint(state_dir: Path, spec: RequirementSpec, pack: ResearchPack, candidates: List[Candidate], route_notes: Dict[str, str], strategies: Dict[str, str]) -> None:
+def save_checkpoint(state_dir: Path, spec: RequirementSpec, pack: ResearchPack, candidates: List[Candidate], route_notes: Dict[str, str], strategies: Dict[str, str], routes: List[dict] | None = None) -> None:
     tools = [
         {
             "name": tool.name,
@@ -43,6 +43,7 @@ def save_checkpoint(state_dir: Path, spec: RequirementSpec, pack: ResearchPack, 
             "candidates": [item.to_dict() for item in candidates],
             "route_notes": route_notes,
             "strategies": strategies,
+            "routes": routes or [],
         },
     )
 
@@ -51,7 +52,7 @@ def checkpoint_ready(state_dir: Path) -> bool:
     return all((state_dir / name).is_file() for name in ("spec.json", "research.json", "design.json"))
 
 
-def load_checkpoint(state_dir: Path) -> Tuple[RequirementSpec, ResearchPack, List[Candidate], Dict[str, str], Dict[str, str]]:
+def load_checkpoint(state_dir: Path):
     spec_raw = _load(state_dir / "spec.json")
     research_raw = _load(state_dir / "research.json")
     design_raw = _load(state_dir / "design.json")
@@ -100,10 +101,15 @@ def load_checkpoint(state_dir: Path) -> Tuple[RequirementSpec, ResearchPack, Lis
         item["screen_status"] = ""
         item["composite"] = 0
         candidates.append(Candidate(**item))
+    from antibody_pipeline.routes import normalize_routes
+
+    stored_routes = design_raw.get("routes") or []
+    routes = normalize_routes(stored_routes) if stored_routes else []
     return (
         spec,
         pack,
         candidates,
         dict(design_raw.get("route_notes") or {}),
         {str(key): value for key, value in (design_raw.get("strategies") or {}).items()},
+        routes,
     )

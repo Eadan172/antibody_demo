@@ -1,8 +1,9 @@
-"""把结构化结果写成与专家团流程对应的交付文件。"""
+"""把结构化结果写成调研、设计、序列、快筛和综合评估文件。"""
 
 from __future__ import annotations
 
 import html
+import re
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +18,22 @@ from antibody_pipeline.models import (
     ToolRun,
 )
 from antibody_pipeline.sequence_analysis import format_hits, germline_token
+
+
+def _safe_filename_token(text: str) -> str:
+    cleaned = re.sub(r"[^\w\u4e00-\u9fff]+", "", text or "")
+    return cleaned or "route"
+
+
+def design_report_filename(index: int, route: dict) -> str:
+    name = _safe_filename_token(route.get("name") or route.get("title") or route.get("prefix"))
+    return f"{index:02d}_{name}_抗体设计报告.md"
+
+
+def fasta_filename(index: int, route: dict, count: int) -> str:
+    letter = chr(ord("d") + index)
+    prefix = route.get("prefix") or f"R{index + 1}"
+    return f"02{letter}_{prefix}_{count}候选_可变区序列.fasta"
 
 
 def _md(text: str) -> str:
@@ -136,9 +153,9 @@ def render_design(
 ) -> str:
     names = " / ".join(item.name for item in targets)
     parts = [
-        f"# {expert}（{route_title}路线）抗体设计报告",
+        f"# {route_title}抗体设计报告",
         "",
-        f"> 路线：{route_title} ｜ 专家角色：{expert} ｜ 日期：{stamp}",
+        f"> 设计路线：{route_title} ｜ 日期：{stamp}",
         f"> 靶点：{names}",
         f"> 候选数：{len(candidates)}",
         ">",
@@ -191,7 +208,7 @@ def render_fasta(candidates: Sequence[Candidate], stamp: str, route_label: str) 
     return "\n".join(lines).rstrip() + "\n"
 
 
-def render_sequence_index(candidates: Sequence[Candidate]) -> str:
+def render_sequence_index(candidates: Sequence[Candidate], fasta_hint: str) -> str:
     rows = []
     for candidate in candidates:
         rows.append([
@@ -205,9 +222,9 @@ def render_sequence_index(candidates: Sequence[Candidate]) -> str:
             str(len(candidate.cdr_h3)),
         ])
     return "\n".join([
-        "# 双路线候选序列索引",
+        "# 候选序列索引",
         "",
-        "FASTA 见同目录 `02d`（博兹）和 `02e`（普腾）。下表只做检索。",
+        fasta_hint,
         "",
         _table(["编号", "路线", "靶点", "预测表位", "格式", "VH 胚系", "VL 胚系", "H3长度"], rows),
         "",
@@ -216,7 +233,7 @@ def render_sequence_index(candidates: Sequence[Candidate]) -> str:
 
 def render_dedup(report: DedupReport, candidates: Sequence[Candidate], stamp: str) -> str:
     parts = [
-        "# 两路线候选去冗余核对报告",
+        "# 设计路线去冗余核对报告",
         "",
         f"> 生成时间：{stamp}",
         "> 目的：在快筛前找出完全重复，以及独立设计但框架或 CDR 趋同的配对。",
@@ -261,7 +278,7 @@ def render_dedup(report: DedupReport, candidates: Sequence[Candidate], stamp: st
 def render_summary(candidates: Sequence[Candidate], stamp: str) -> str:
     grouped = _by_target(candidates)
     parts = [
-        f"# 双路线候选抗体汇总清单（{len(candidates)}条）",
+        f"# 候选抗体汇总清单（{len(candidates)}条）",
         "",
         f"> 生成时间：{stamp} ｜ 用途：快筛输入与汇编底稿",
         "",
@@ -387,7 +404,7 @@ def render_screen(
         "- 表达后做 SEC、AC-SINS，核对聚集；做差示扫描荧光或类似方法看热稳定性趋势。",
         "- 用 SPR 或 BLI 对靶点及近缘同源蛋白做结合，核对设计阶段写下的特异性风险。",
         "- 被 N-糖基化过滤的序列，优先评估 CDR 中 N→Q 后再重新跑本流程的快筛，而不是直接进入动物实验。",
-        "- 若本地 Protenix、Boltz 或其他结构程序可用，把地址写进需求文件后重跑，用真实 iPTM/pLDDT 更新排序。",
+        "- 若本机或内网已有结构预测程序，把命令或接口写进需求文件后重跑，用真实回传的 iPTM/pLDDT 更新排序。",
         "",
     ])
     return "\n".join(parts)
@@ -407,6 +424,8 @@ def render_final(
     tools: Sequence[ToolRun],
     stamp: str,
     source_note: str,
+    route_names: str,
+    index_lines: Sequence[str],
 ) -> str:
     grouped = _by_target(candidates)
     blocked = [item for item in candidates if item.screen_status == "过滤"]
@@ -414,7 +433,7 @@ def render_final(
         f"# {spec.project_name}综合评估报告",
         "",
         f"> 日期：{stamp}",
-        f"> 流程：要求分析 → 靶点调研 → 双路线设计（博兹 / 普腾）→ 本地计算（如已配置）→ 去冗余 → 快筛 → 汇编",
+        f"> 流程：要求分析 → 靶点调研 → 分路线设计（{route_names}）→ 本地计算（如已配置）→ 去冗余 → 快筛 → 汇编",
         ">",
         f"> **声明**：{source_note} 全部表位、亲和力、特异性和可开发性叙述都是 in-silico 预测，不能代替实验。",
         "",
@@ -508,17 +527,7 @@ def render_final(
         "",
         "# 第六部分：文件索引",
         "",
-        "- `00_靶点调研报告.md`",
-        "- `01_博兹_BoltzMSA_抗体设计报告.md`",
-        "- `02_普腾_ProtenixMSA_抗体设计报告.md`",
-        "- `02b_双路线候选序列索引.md`",
-        "- `02c_双路线去冗余核对报告.md`",
-        "- `02d` / `02e` FASTA",
-        "- `03_候选汇总清单.md`",
-        "- `04_快筛初筛报告.md`",
-        "- `05_综合评估报告.md`（本文件）",
-        "- `06_综合评估报告.html`",
-        "- `工作日志.md`、`完成概览.md`",
+        *index_lines,
         "",
     ])
     return "\n".join(parts)
@@ -643,6 +652,8 @@ def render_overview(
     candidates: Sequence[Candidate],
     stamp: str,
     output_dir: Path,
+    route_names: str,
+    file_rows: Sequence[Sequence[str]],
 ) -> str:
     grouped = _by_target(candidates)
     tops = _top_passing(candidates, 4)
@@ -650,18 +661,6 @@ def render_overview(
     for target in pack.selected:
         best = next((item for item in grouped.get(target.name, []) if item.screen_status != "过滤"), None)
         rows.append([target.name, target.heat or "见调研报告", target.design_points or "—", best.id if best else "—"])
-    file_rows = [
-        ["00_靶点调研报告.md", "靶点筛选依据"],
-        ["01_博兹_BoltzMSA_抗体设计报告.md", "博兹路线候选"],
-        ["02_普腾_ProtenixMSA_抗体设计报告.md", "普腾路线候选"],
-        ["02b_双路线候选序列索引.md", "序列索引"],
-        ["02c_双路线去冗余核对报告.md", "去冗余"],
-        ["02d / 02e FASTA", "可变区序列"],
-        ["03_候选汇总清单", "汇总表"],
-        ["04_快筛初筛报告.md", "规则快筛、过滤和打分"],
-        ["05_综合评估报告.md", "主交付"],
-        ["06_综合评估报告.html", "可视化版本"],
-    ]
     return "\n".join([
         f"# {spec.project_name} · 完成概览",
         "",
@@ -677,7 +676,7 @@ def render_overview(
         "",
         f"### 候选",
         "",
-        f"共 {len(list(candidates))} 条，来自博兹与普腾两条路线。",
+        f"共 {len(list(candidates))} 条，来自本次设计路线：{route_names}。",
         "",
         "### 优先顺序",
         "",
@@ -712,26 +711,85 @@ def write_reports(
     strategies: Dict[str, str],
     phases: Sequence[str],
     source_note: str,
+    routes: Sequence[dict],
 ) -> List[Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-    blz = [item for item in candidates if item.route_label == "BLZ"]
-    prx = [item for item in candidates if item.route_label == "PRX"]
+    from antibody_pipeline.routes import route_label_text
+
+    route_names = route_label_text(list(routes))
+    grouped_routes = []
+    for index, route in enumerate(routes):
+        group = [item for item in candidates if item.route_label == route.get("prefix")]
+        grouped_routes.append((index, route, group))
+    known = {route.get("prefix") for route in routes}
+    orphan_labels = []
+    for candidate in candidates:
+        if candidate.route_label not in known and candidate.route_label not in orphan_labels:
+            orphan_labels.append(candidate.route_label)
+    for label in orphan_labels:
+        group = [item for item in candidates if item.route_label == label]
+        grouped_routes.append(
+            (
+                len(grouped_routes),
+                {"id": label, "prefix": label, "name": group[0].expert or label, "title": group[0].route or label},
+                group,
+            )
+        )
+
+    fasta_bits = []
+    catalog = [("00_靶点调研报告.md", "靶点筛选依据")]
+    design_files = {}
+    for index, route, group in grouped_routes:
+        report_name = design_report_filename(index + 1, route)
+        fasta_name = fasta_filename(index, route, len(group))
+        design_files[report_name] = render_design(
+            route.get("name") or "",
+            route.get("name") or "",
+            route.get("title") or route.get("name") or "",
+            route_notes.get(route.get("id"), ""),
+            group,
+            pack.selected,
+            strategies,
+            route.get("id"),
+            stamp,
+            source_note,
+        )
+        design_files[fasta_name] = render_fasta(group, stamp, route.get("name") or route.get("prefix") or "")
+        catalog.append((report_name, f"{route.get('name') or route.get('prefix')} 候选"))
+        fasta_bits.append(f"`{fasta_name}`")
+        catalog.append((fasta_name, f"{route.get('name') or route.get('prefix')} 可变区序列"))
+    summary_name = f"03_候选汇总清单_{len(candidates)}条.md"
+    fasta_hint = "FASTA：" + ("、".join(fasta_bits) if fasta_bits else "本次没有序列文件") + "。下表只做检索。"
+    index_lines = [f"- `{name}`：{desc}" for name, desc in catalog]
+    index_lines.extend([
+        "- `02b_候选序列索引.md`：序列索引",
+        "- `02c_设计路线去冗余核对报告.md`：去冗余",
+        f"- `{summary_name}`：汇总表",
+        "- `04_快筛初筛报告.md`：规则快筛、过滤和打分",
+        "- `05_综合评估报告.md`：主交付",
+        "- `06_综合评估报告.html`：可视化版本",
+        "- `工作日志.md`、`完成概览.md`",
+    ])
+    file_rows = [(name, desc) for name, desc in catalog]
+    file_rows.extend([
+        ("02b_候选序列索引.md", "序列索引"),
+        ("02c_设计路线去冗余核对报告.md", "去冗余"),
+        (summary_name, "汇总表"),
+        ("04_快筛初筛报告.md", "规则快筛、过滤和打分"),
+        ("05_综合评估报告.md", "主交付"),
+        ("06_综合评估报告.html", "可视化版本"),
+    ])
     files = {
         "00_靶点调研报告.md": render_research(pack, spec, stamp),
-        "01_博兹_BoltzMSA_抗体设计报告.md": render_design(
-            "博兹", "博兹", "Boltz·MSA", route_notes.get("boltz", ""), blz, pack.selected, strategies, "boltz", stamp, source_note
-        ),
-        "02_普腾_ProtenixMSA_抗体设计报告.md": render_design(
-            "普腾", "普腾", "Protenix·MSA", route_notes.get("protenix", ""), prx, pack.selected, strategies, "protenix", stamp, source_note
-        ),
-        "02b_双路线候选序列索引.md": render_sequence_index(candidates),
-        "02c_双路线去冗余核对报告.md": render_dedup(dedup, candidates, stamp),
-        f"02d_BLZ_{len(blz)}候选_可变区序列.fasta": render_fasta(blz, stamp, "BLZ"),
-        f"02e_PRX_{len(prx)}候选_可变区序列.fasta": render_fasta(prx, stamp, "PRX"),
-        f"03_候选汇总清单_{len(candidates)}条.md": render_summary(candidates, stamp),
+        **design_files,
+        "02b_候选序列索引.md": render_sequence_index(candidates, fasta_hint),
+        "02c_设计路线去冗余核对报告.md": render_dedup(dedup, candidates, stamp),
+        summary_name: render_summary(candidates, stamp),
         "04_快筛初筛报告.md": render_screen(candidates, tools, stamp, source_note),
-        "05_综合评估报告.md": render_final(spec, pack, candidates, dedup, tools, stamp, source_note),
+        "05_综合评估报告.md": render_final(
+            spec, pack, candidates, dedup, tools, stamp, source_note, route_names, index_lines
+        ),
         "06_综合评估报告.html": render_html(spec, pack, candidates, stamp),
     }
     written = []
@@ -742,6 +800,9 @@ def write_reports(
     log_path = output_dir / "工作日志.md"
     overview_path = output_dir / "完成概览.md"
     log_path.write_text(render_worklog(spec, pack, candidates, tools, phases, stamp, output_dir), encoding="utf-8")
-    overview_path.write_text(render_overview(spec, pack, candidates, stamp, output_dir), encoding="utf-8")
+    overview_path.write_text(
+        render_overview(spec, pack, candidates, stamp, output_dir, route_names, file_rows),
+        encoding="utf-8",
+    )
     written.extend([log_path, overview_path])
     return written

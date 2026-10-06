@@ -18,15 +18,19 @@ pipeline:
   # 输入文件未写明数量时使用。示例输入里写了更小的数字，以输入文件为准。
   default_n_per_route_per_target: 6
   design_batch_size: 3
+  # 默认只是两条互补的设计策略，名称中性。
+  # 需求文件里如果写了「设计路线」，以需求文件为准，不会固定成某两个软件或商品。
   routes:
-    - id: boltz
-      prefix: BLZ
-      expert: 博兹
-      title: Boltz·MSA
-    - id: protenix
-      prefix: PRX
-      expert: 普腾
-      title: Protenix·MSA
+    - id: route_a
+      prefix: A
+      name: 路线A
+      title: 路线A
+      focus: 偏膜近端、内化表位和不同分子格式，CDR-H3 长度拉开。这是设计策略，不是某个计算软件的输出。
+    - id: route_b
+      prefix: B
+      name: 路线B
+      title: 路线B
+      focus: 偏功能表位覆盖、效应功能相关格式和特异性机制，与路线A的 CDR-H3、表位侧重点不要雷同。不要把结果写成用户未指定的软件或商品输出。
 
 compute:
   # 本地结构/计算程序单次调用超时（秒）

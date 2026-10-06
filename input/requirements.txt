@@ -24,8 +24,15 @@ CLDN6
 
 功能模态
 同时考虑阻断、快速内化（ADC 方向）以及必要时的 ADCC/ADCP。
-两条设计路线要互补：一条偏膜近端内化与 CDR-H3 长度多样性，一条偏表位覆盖与效应功能格式。
+设计路线要互补：一条偏膜近端内化与 CDR-H3 长度多样性，一条偏表位覆盖与效应功能格式。
 每条候选的 CDR-H3 必须不同。
+
+设计路线
+# 不写具体行时，使用 config.yaml 里的默认路线（路线A / 路线B），只表示互补策略。
+# 换靶点或换策略时，取消注释并改成你自己的路线名、编号前缀和侧重点。
+# 格式：路线名称 | 编号前缀 | 侧重点
+# 内化优先 | IN | 偏膜近端与快速内化，CDR-H3 长度拉开
+# 阻断优先 | BK | 偏功能阻断与特异性，格式按效应需求选择
 
 每路线每靶点候选数
 2
@@ -35,6 +42,7 @@ CLDN6
 # 格式：名称 | cli或api | 地址 | 命令模板 | 可选令牌
 # 命令模板可省略。可用占位符 {program} {fasta} {outdir}。路径含空格时请给路径加引号。
 # 程序需把 JSON 写到 {outdir}/results.json，或把 JSON 打到标准输出。
-# 结果格式示例：{"results":[{"id":"BLZ-CDH17-01","iptm":0.8,"plddt":85,"pae":6}]}
-# protenix | cli | /opt/protenix/bin/protenix | {program} predict --input {fasta} --out {outdir} |
-# boltz | api | http://127.0.0.1:8080/predict | |
+# 结果里的 id 要和候选编号一致，例如 A-CDH17-01。
+# 结果格式示例：{"results":[{"id":"A-CDH17-01","iptm":0.8,"plddt":85,"pae":6}]}
+# fold_tool | cli | /opt/fold/bin/predict | {program} --input {fasta} --out {outdir} |
+# fold_api | api | http://127.0.0.1:8080/predict | |
