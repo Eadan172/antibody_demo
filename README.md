@@ -60,8 +60,8 @@ research_queries =
     CLDN6 antibody cancer
     CLDN6 CLDN9 cross-reactivity
 
-[local_tool:boltz]
-command = /opt/boltz/bin/boltz predict --input {input} --out_dir {output_dir}
+[local_tool:structure_predictor]
+command = /path/to/predictor predict --input {input} --out_dir {output_dir}
 timeout = 7200
 
 [api_tool:structure_service]

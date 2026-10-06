@@ -8,8 +8,8 @@ research_queries =
     CLDN6 CLDN9 antibody cross-reactivity
 
 # 可选：取消下方注释并替换路径，即可调用已安装的本地软件。
-# [local_tool:boltz]
-# command = /opt/boltz/bin/boltz predict --input {input} --out_dir {output_dir}
+# [local_tool:structure_predictor]
+# command = /path/to/predictor predict --input {input} --out_dir {output_dir}
 # timeout = 7200
 
 # 可选：HTTP 计算服务会收到需求、分析和候选的 JSON。

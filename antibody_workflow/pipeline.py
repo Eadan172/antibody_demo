@@ -80,6 +80,8 @@ class Workflow:
             f"""提出可进入计算筛选的抗体设计方案。候选数量服从需求；若需求未指定，每个靶点最多4条。
 允许生成候选 VH/VL 序列，但必须标为“未验证设计序列”，不得声称真实亲和力、结构分数或实验效果。
 每条候选应覆盖不同表位/骨架/模态，并给出 PTM、聚集、免疫原性、种属和脱靶检查计划。
+设计路线必须基于本次靶点和调研证据动态命名，不得复用任何案例的公司、商品、平台、候选前缀或序列。
+候选编号统一使用中性格式 CAND-<TARGET>-<序号>。
 需求：{_compact(analysis)}
 调研：{_compact(research)}""",
             """{
@@ -95,7 +97,9 @@ class Workflow:
 }""",
             temperature=0.35,
         )
-        candidates = design.get("candidates", [])
+        candidates = _normalize_candidate_ids(design.get("candidates", []))
+        design["candidates"] = candidates
+        self._write_json("02_design", design)
         write_markdown(
             self.output_dir / "02_候选设计报告.md",
             "候选抗体设计报告",
@@ -239,6 +243,24 @@ def _compact(value: Any, limit: int = 45000) -> str:
 
 def _string_list(value: Any) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
+
+
+def _normalize_candidate_ids(value: Any) -> list[dict[str, Any]]:
+    """候选编号不继承模型可能复用的案例或商业前缀。"""
+    if not isinstance(value, list):
+        return []
+    counters: dict[str, int] = {}
+    normalized: list[dict[str, Any]] = []
+    for raw in value:
+        if not isinstance(raw, dict):
+            continue
+        item = dict(raw)
+        target = "".join(char for char in str(item.get("target", "TARGET")).upper() if char.isalnum())
+        target = target or "TARGET"
+        counters[target] = counters.get(target, 0) + 1
+        item["id"] = f"CAND-{target}-{counters[target]:03d}"
+        normalized.append(item)
+    return normalized
 
 
 def _literature_markdown(records: list[dict[str, Any]]) -> str:

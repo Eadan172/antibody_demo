@@ -137,7 +137,10 @@ class WorkflowTests(unittest.TestCase):
             manifest = json.loads((output / "run_manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["status"], "completed")
             self.assertNotIn("secret-key", (output / "run_manifest.json").read_text())
-            self.assertIn("UNVERIFIED_DESIGN", (output / "02b_候选可变区序列.fasta").read_text())
+            fasta = (output / "02b_候选可变区序列.fasta").read_text()
+            self.assertIn("UNVERIFIED_DESIGN", fasta)
+            self.assertIn("CAND-CLDN6-001", fasta)
+            self.assertNotIn("TEST-01", fasta)
 
 
 class ToolTests(unittest.TestCase):
