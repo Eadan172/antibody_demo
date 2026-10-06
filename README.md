@@ -1,175 +1,124 @@
-# antibody_demo
-基于多维度理化特征的抗体药物快速筛选工具
-# 抗体药物虚拟筛选系统
+# 抗体发现自动化工作流
 
-> 🧬 基于多维度理化特征的抗体药物快速筛选工具  
-> 👤 作者：Eadan172  
-> ⏱️ 处理1000条数据仅需10秒
+把自然语言抗体需求写进一个文本文件，系统会自动完成需求拆解、PubMed 调研、
+候选设计、可选本地/API 计算、结果分析和 00–06 号报告整理。
 
----
+## 一键运行
 
-📋 项目简介
-
-本项目是一个轻量级的抗体药物虚拟筛选工具，通过综合评估抗体的稳定性、溶解度、免疫原性和亲和力，从大量候选抗体中快速筛选出最优候选。
-
-核心特点：
-- ✅ 防御性编程：完善的错误处理和日志记录
-- ✅ 可配置化：所有阈值参数外置，灵活调整
-- ✅ 易扩展：模块化设计，支持功能快速迭代
-- ✅ 产品化思维：完整的输入-处理-输出闭环
-
----
-
-🚀 快速开始
-
-### 环境要求
-
-- Python 3.8+
-- 依赖包：无第三方依赖（仅使用标准库）
-
-### 安装
+Linux / macOS：
 
 ```bash
-# 克隆仓库
 git clone https://github.com/Eadan172/antibody_demo.git
 cd antibody_demo
-
-# 安装依赖（如有）
-pip install -r requirements.txt
+./run.sh examples/抗体需求示例.txt
 ```
 
-### 运行
+Windows：
+
+```bat
+git clone https://github.com/Eadan172/antibody_demo.git
+cd antibody_demo
+run.bat examples\抗体需求示例.txt
+```
+
+首次运行会在当前目录创建 `.venv`，并提示输入 LLM API Key。Key 只写入本地
+`.env`（Git 已忽略），之后无需重复输入。核心工作流仅使用 Python 标准库。
+
+默认使用 OpenAI 兼容接口。其他兼容服务可在首次运行前设置：
 
 ```bash
-# 使用默认配置运行
-python antibody_virtual_screening.py
-
-# 查看输出结果
-cat screening_report.json
+export LLM_BASE_URL=https://your-provider.example/v1
+export LLM_MODEL=your-model
+./run.sh examples/抗体需求示例.txt
 ```
 
----
+也可以直接编辑本地 `.env`：
 
-📁 项目结构
-
-```
-antibody_ai_demo/
-├── antibody_virtual_screening.py    # 核心代码（204行）
-├── config.yaml                      # 配置文件
-├── requirements.txt                 # 依赖列表
-├── tests/                           # 测试用例
-│   ├── test_data_loader.py
-│   ├── test_screening.py
-│   └── test_report.py
-└── README.md                        # 本文件
+```dotenv
+LLM_API_KEY=...
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-5-mini
 ```
 
----
+## 输入文件
 
-⚙️ 配置说明
+最简单的输入文件可以只有自然语言：
 
-编辑 `config.yaml` 调整筛选参数：
-
-```yaml
-# 筛选阈值
-stability_threshold: 75.0       # 稳定性最低要求（0-100）
-solubility_threshold: 60.0      # 溶解度最低要求（0-100）
-immunogenicity_threshold: 30.0  # 免疫原性上限（越低越好）
-
-# 输出设置
-top_k: 5                        # 输出Top-K结果
-batch_size: 100                 # 批处理大小
+```text
+请针对 CLDN6 设计 6 条全人源候选抗体，优先卵巢癌 ADC。
+要求区分 CLDN9，检查 PTM，并给出人/食蟹猴种属验证计划。
 ```
 
----
+若需指定项目名、检索式或计算软件，可在正文前加入配置块：
 
-📊 输入/输出格式
+```ini
+---config
+[project]
+name = my-project
+output_dir = outputs
+research_queries =
+    CLDN6 antibody cancer
+    CLDN6 CLDN9 cross-reactivity
 
-### 输入格式（JSON）
+[local_tool:boltz]
+command = /opt/boltz/bin/boltz predict --input {input} --out_dir {output_dir}
+timeout = 7200
 
-```json
-{
-  "id": "AB_0001",
-  "sequence": "EVQLVESGGGLVQPGGSLRLSCAAS...",
-  "stability_score": 85.0,
-  "solubility_score": 70.0,
-  "immunogenicity_score": 25.0,
-  "binding_affinity": 0.5
-}
+[api_tool:structure_service]
+url = https://example.org/api/predict
+method = POST
+header_authorization = Bearer ${STRUCTURE_API_KEY}
+---end
+
+这里开始写完整的抗体要求……
 ```
 
-### 输出格式（JSON）
+本地命令支持三个占位符：
 
-```json
-{
-  "timestamp": "2024-01-15T10:30:00",
-  "summary": {
-    "total_input": 1000,
-    "passed_count": 50,
-    "pass_rate": "5.0%"
-  },
-  "top_candidates": [
-    {
-      "rank": 1,
-      "id": "AB_0085",
-      "composite_score": 92.5
-    }
-  ],
-  "recommendations": [
-    "优先推进候选抗体 AB_0085（综合评分: 92.5）"
-  ]
-}
+- `{input}`：需求文件绝对路径
+- `{output_dir}`：本次运行的 `computations/` 目录
+- `{project_dir}`：代码仓库目录
+
+本地工具以参数数组直接执行，不经过 shell。API 工具收到包含需求、需求分析和候选
+清单的 JSON。工具的 stdout、stderr、原始响应和执行状态都会留档。
+
+## 输出
+
+每次运行创建独立时间戳目录：
+
+```text
+outputs/<项目名>-<时间>/
+├── 00_需求分析与任务拆解.md
+├── 01_靶点调研报告.md
+├── 02_候选设计报告.md
+├── 02b_候选可变区序列.fasta
+├── 03_候选汇总清单.md
+├── 04_计算与快筛报告.md
+├── 05_综合评估报告.md
+├── 06_综合评估报告.html
+├── overview.md
+├── run_manifest.json
+├── computations/                 # 本地/API 工具原始结果与清单
+└── raw/                          # 每个 LLM 阶段的原始 JSON
 ```
 
----
+## 证据边界
 
-🧪 测试
+- PubMed 记录由 NCBI E-utilities 实时检索，并保留 PMID 链接。
+- LLM 生成的候选序列只标记为“未验证设计序列”。
+- 未配置或未成功运行计算软件时，报告必须写“未计算”，不会生成虚假
+  iPTM、pLDDT、KD、结合能或实验数据。
+- 输出是研究决策辅助材料，不能替代结构计算、体外实验、动物实验或临床判断。
+
+## 测试与旧版兼容
 
 ```bash
-# 运行所有测试
-python -m pytest tests/
-
-# 运行单个测试
-python -m pytest tests/test_screening.py -v
+python -m unittest discover -s tests -v
 ```
 
----
+原有 `antibody_virtual_screening.py` 的数据模型、筛选函数和报告函数继续保留，已有
+调用方无需迁移。
 
-📈 性能指标
+## 许可证
 
-| 数据规模 | 处理时间 | 内存占用 |
-|----------|----------|----------|
-| 1,000条  | ~0.5秒   | ~10MB    |
-| 10,000条 | ~3秒     | ~50MB    |
-| 100,000条| ~30秒    | ~200MB   |
-
----
-
-🛣️ 扩展计划
-
-- [ ] Web界面：让非技术同事也能使用
-- [ ] 数据库支持：从SQLite迁移到PostgreSQL
-- [ ] 可视化：增加筛选过程图表
-- [ ] API服务：封装成RESTful API
-- [ ] 大模型集成：自动生成推荐理由
-
----
-
-🤝 贡献指南
-
-欢迎提交Issue和PR！
-
-1. Fork本仓库
-2. 创建功能分支：`git checkout -b feature/xxx`
-3. 提交更改：`git commit -m 'Add xxx'`
-4. 推送分支：`git push origin feature/xxx`
-5. 创建Pull Request
-
----
-
-## 📄 许可证
-
-MIT License
-
----
-
+MIT
