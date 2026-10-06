@@ -8,7 +8,7 @@ if "%~1"=="" (
 )
 
 if not exist ".venv\Scripts\python.exe" (
-  py -3 -m venv .venv || exit /b 1
+  py -3 -m venv --without-pip .venv || exit /b 1
 )
 
 if not exist ".env" (

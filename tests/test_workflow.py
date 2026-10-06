@@ -1,11 +1,13 @@
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from antibody_workflow.config import Settings, parse_task_file
+from antibody_workflow.config import Settings, ToolSpec, parse_task_file
 from antibody_workflow.pipeline import Workflow
+from antibody_workflow.tools import run_tools
 
 
 class FakeLLM:
@@ -136,6 +138,31 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(manifest["status"], "completed")
             self.assertNotIn("secret-key", (output / "run_manifest.json").read_text())
             self.assertIn("UNVERIFIED_DESIGN", (output / "02b_候选可变区序列.fasta").read_text())
+
+
+class ToolTests(unittest.TestCase):
+    def test_local_tool_output_is_archived(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            task_file = root / "request.txt"
+            task_file.write_text("test", encoding="utf-8")
+            results = run_tools(
+                [
+                    ToolSpec(
+                        name="echo-test",
+                        kind="local",
+                        command=f'{sys.executable} -c "print(123)"',
+                        timeout=10,
+                    )
+                ],
+                task_file=task_file,
+                output_dir=root,
+                context={},
+            )
+            self.assertEqual(results[0]["status"], "completed")
+            self.assertEqual(results[0]["stdout_preview"].strip(), "123")
+            self.assertTrue((root / results[0]["stdout_file"]).exists())
+            self.assertTrue((root / "computations" / "manifest.json").exists())
 
 
 if __name__ == "__main__":

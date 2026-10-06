@@ -9,9 +9,9 @@ if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ ! -d "$ROOT/.venv" ]]; then
+if [[ ! -x "$ROOT/.venv/bin/python" ]]; then
   echo "正在创建 .venv ..."
-  "$PYTHON_BIN" -m venv "$ROOT/.venv"
+  "$PYTHON_BIN" -m venv --without-pip "$ROOT/.venv"
 fi
 
 if [[ ! -f "$ROOT/.env" ]]; then
@@ -32,5 +32,4 @@ EOF
   echo "已写入 .env（已被 Git 忽略）。"
 fi
 
-"$ROOT/.venv/bin/python" -m pip install --quiet --upgrade pip
 echo "环境就绪：$ROOT/.venv"
