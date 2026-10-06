@@ -1,11 +1,29 @@
-# 抗体发现自动化工作流
+# antibody-workflow
 
-把自然语言抗体需求写进一个文本文件，系统会自动完成需求拆解、PubMed 调研、
-候选设计、可选本地/API 计算、结果分析和 00–06 号报告整理。
+从一份抗体需求文本开始，整理出调研、候选设计、计算记录和最终报告。
 
-## 一键运行
+这个项目原来只是一个理化指标筛选 Demo。后来实际做项目时发现，真正费时间的往往
+不是最后那一步排序，而是前面的需求拆解、资料核对，以及把不同软件的结果收拢到一起。
+所以在保留旧筛选脚本的同时，补了一套可以从头跑到尾的命令行工作流。
 
-Linux / macOS：
+```text
+需求文件
+   │
+   ├── 需求拆解
+   ├── PubMed 检索
+   ├── 候选设计
+   ├── 本地程序 / API 计算（可选）
+   └── 快筛、汇总与报告
+```
+
+> 这不是“一键得到可用抗体”的黑盒。没有实际运行过的计算会写成“未计算”，
+> 模型生成的序列也只会标记为“未验证设计序列”。
+
+## 快速开始
+
+需要 Python 3.10 或更新版本。运行时不依赖第三方 Python 包。
+
+### Linux / macOS
 
 ```bash
 git clone https://github.com/Eadan172/antibody_demo.git
@@ -13,7 +31,7 @@ cd antibody_demo
 ./run.sh examples/抗体需求示例.txt
 ```
 
-Windows：
+### Windows
 
 ```bat
 git clone https://github.com/Eadan172/antibody_demo.git
@@ -21,18 +39,16 @@ cd antibody_demo
 run.bat examples\抗体需求示例.txt
 ```
 
-首次运行会在当前目录创建 `.venv`，并提示输入 LLM API Key。Key 只写入本地
-`.env`（Git 已忽略），之后无需重复输入。核心工作流仅使用 Python 标准库。
+第一次运行会：
 
-默认使用 OpenAI 兼容接口。其他兼容服务可在首次运行前设置：
+1. 在项目目录创建 `.venv`；
+2. 询问 LLM API Key；
+3. 将 Key 保存到本机 `.env`；
+4. 开始处理需求文件。
 
-```bash
-export LLM_BASE_URL=https://your-provider.example/v1
-export LLM_MODEL=your-model
-./run.sh examples/抗体需求示例.txt
-```
+`.env` 已加入 `.gitignore`，不会随代码提交。之后再次运行时不会重复询问。
 
-也可以直接编辑本地 `.env`：
+默认配置使用 OpenAI 兼容接口：
 
 ```dotenv
 LLM_API_KEY=...
@@ -40,51 +56,72 @@ LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL=gpt-5-mini
 ```
 
-## 输入文件
+如果使用其他兼容服务，修改 `.env` 中的接口地址和模型名即可。
 
-最简单的输入文件可以只有自然语言：
+## 怎么写需求
+
+只有自然语言也能运行。例如：
 
 ```text
-请针对 CLDN6 设计 6 条全人源候选抗体，优先卵巢癌 ADC。
-要求区分 CLDN9，检查 PTM，并给出人/食蟹猴种属验证计划。
+请针对目标蛋白设计 6 条全人源候选抗体，优先考虑 ADC。
+
+要求：
+- 覆盖两个不同胞外表位；
+- 检查近缘蛋白交叉反应；
+- 目标种属为人和食蟹猴；
+- 检查 CDR 区 PTM 与聚集风险；
+- 没有真实计算结果时，不要给出结构分数或亲和力数值。
 ```
 
-若需指定项目名、检索式或计算软件，可在正文前加入配置块：
+示例文件在 [`examples/抗体需求示例.txt`](examples/抗体需求示例.txt)。
+
+### 需要接计算软件时
+
+在正文前加一段配置。下面的路径只是占位，替换成自己机器上的实际命令：
 
 ```ini
 ---config
 [project]
-name = my-project
+name = my-antibody-project
 output_dir = outputs
 research_queries =
-    CLDN6 antibody cancer
-    CLDN6 CLDN9 cross-reactivity
+    target antibody cancer
+    target homolog cross-reactivity
 
 [local_tool:structure_predictor]
 command = /path/to/predictor predict --input {input} --out_dir {output_dir}
 timeout = 7200
+---end
 
+这里开始写抗体需求……
+```
+
+命令里可以使用：
+
+| 占位符 | 实际内容 |
+|---|---|
+| `{input}` | 需求文件的绝对路径 |
+| `{output_dir}` | 本次运行的 `computations/` 目录 |
+| `{project_dir}` | 代码仓库目录 |
+
+本地程序不会经过 shell 拼接执行。stdout、stderr、返回码都会保留，方便事后排查。
+
+### 使用 HTTP 计算接口
+
+```ini
 [api_tool:structure_service]
 url = https://example.org/api/predict
 method = POST
+timeout = 1800
 header_authorization = Bearer ${STRUCTURE_API_KEY}
----end
-
-这里开始写完整的抗体要求……
 ```
 
-本地命令支持三个占位符：
+接口会收到需求、需求分析和候选清单组成的 JSON。响应原文会存入本次运行目录。
+额外密钥建议放进环境变量，不要直接写在需求文件里。
 
-- `{input}`：需求文件绝对路径
-- `{output_dir}`：本次运行的 `computations/` 目录
-- `{project_dir}`：代码仓库目录
+## 会生成什么
 
-本地工具以参数数组直接执行，不经过 shell。API 工具收到包含需求、需求分析和候选
-清单的 JSON。工具的 stdout、stderr、原始响应和执行状态都会留档。
-
-## 输出
-
-每次运行创建独立时间戳目录：
+每次运行使用单独的时间戳目录，不会覆盖前一次结果：
 
 ```text
 outputs/<项目名>-<时间>/
@@ -98,27 +135,70 @@ outputs/<项目名>-<时间>/
 ├── 06_综合评估报告.html
 ├── overview.md
 ├── run_manifest.json
-├── computations/                 # 本地/API 工具原始结果与清单
-└── raw/                          # 每个 LLM 阶段的原始 JSON
+├── computations/
+└── raw/
 ```
 
-## 证据边界
+平时先看 `overview.md` 和 `05_综合评估报告.md` 即可。需要追查某条结论时，再去：
 
-- PubMed 记录由 NCBI E-utilities 实时检索，并保留 PMID 链接。
-- LLM 生成的候选序列只标记为“未验证设计序列”。
-- 未配置或未成功运行计算软件时，报告必须写“未计算”，不会生成虚假
-  iPTM、pLDDT、KD、结合能或实验数据。
-- 输出是研究决策辅助材料，不能替代结构计算、体外实验、动物实验或临床判断。
+- `raw/` 查看各阶段的原始 JSON；
+- `computations/` 查看计算程序原始输出；
+- `run_manifest.json` 查看本次使用的模型、接口和任务文件。
 
-## 测试与旧版兼容
+API Key 不会写入运行清单。
+
+## 结果可信度
+
+工作流刻意把信息分成四类：
+
+| 类型 | 处理方式 |
+|---|---|
+| 公开资料 | 来自实时 PubMed 检索，保留 PMID 链接 |
+| 模型推断 | 明确写成预测、假设或待核验 |
+| 计算结果 | 只采用成功执行的本地程序或 API 返回值 |
+| 实验结论 | 本项目不生成，只提供后续验证建议 |
+
+如果检索不到足够资料，报告会留下证据缺口；如果计算程序没有安装，流程仍可完成，
+但对应部分不会假装已经算过。
+
+## 项目结构
+
+```text
+antibody_workflow/
+├── config.py       # 任务文件和 .env
+├── llm.py          # OpenAI 兼容接口
+├── research.py     # PubMed 检索
+├── tools.py        # 本地命令与 HTTP API
+├── pipeline.py     # 主流程
+└── reporting.py    # Markdown / HTML 输出
+```
+
+旧版快速筛选逻辑仍在 `antibody_virtual_screening.py`，已有调用不需要迁移。
+
+## 测试
+
+新工作流：
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-原有 `antibody_virtual_screening.py` 的数据模型、筛选函数和报告函数继续保留，已有
-调用方无需迁移。
+旧版兼容测试：
 
-## 许可证
+```bash
+cd tests
+python test_data_loader.py
+python test_screening.py
+python test_report.py
+```
 
-MIT
+## 已知限制
+
+- 文献检索目前只接了 PubMed；
+- LLM 服务需要兼容 `/chat/completions` 接口；
+- 不同计算软件的输入格式差异很大，目前通过命令或 HTTP 适配，没有内置专用转换器；
+- 生成序列只能作为下一轮计算和实验的起点。
+
+## License
+
+[MIT](LICENSE)
