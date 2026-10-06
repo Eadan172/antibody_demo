@@ -99,7 +99,7 @@ def build_demo(n_per_route: int = 2):
             epitope="远膜端阻断", format="IgG1/κ", vh_kind="vh1", vl_kind="vl1",
             cdr_h3="GYSSGWYFDY", cdr_l3=shared_l3, kd_pred="预测 1–20 nM",
             specificity="演示：家族交叉风险中低", immunogenicity="低-中（预测）",
-            aggregation="低-中（预测）", tm="中高（预测）", ptm_note="H1 含 M",
+            aggregation="低-中（预测）",             tm="中高（预测）", ptm_note="框架含 M，CDR 未故意引入糖基化",
             strategy="演示：阻断格式", optimization="先做序列规则复核",
             function_score=8, specificity_score=7,
         ),

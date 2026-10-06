@@ -47,11 +47,14 @@ def build_dedup(candidates: List[Candidate]) -> DedupReport:
     groups = []
     for i, left in enumerate(candidates):
         for right in candidates[i + 1 :]:
-            if left.route == right.route and left.target != right.target:
+            if left.route_label == right.route_label:
                 continue
             vl_ratio = _ratio(left.vl, right.vl)
             vh_ratio = _ratio(left.vh, right.vh)
-            if vl_ratio < 0.90 and vh_ratio < 0.90:
+            same_l3 = bool(left.cdr_l3) and left.cdr_l3 == right.cdr_l3
+            # 同一人源框架会让整条 VH 相似度很高，但 CDR 不同就不算需要合并。
+            # 只记录轻链几乎相同，或 CDR-L3 相同且轻链仍然很接近的配对。
+            if vl_ratio < 0.97 and not (same_l3 and vl_ratio >= 0.90):
                 continue
             same_epitope = _epitope_key(left.epitope) == _epitope_key(right.epitope)
             groups.append(
@@ -85,9 +88,9 @@ def build_dedup(candidates: List[Candidate]) -> DedupReport:
     else:
         lines.append("已标注的 CDR-H3 全部不同。")
     if groups:
-        lines.append(f"有 {len(groups)} 对序列相似度 ≥ 0.90，详见趋同组。")
+        lines.append(f"有 {len(groups)} 对跨路线轻链高度接近（一致度 ≥ 0.97，或 CDR-L3 相同且一致度 ≥ 0.90）。同一路线里只在「完全重复」中列出整链相同的情况。")
     else:
-        lines.append("没有轻链或重链相似度达到 0.90 的配对。")
+        lines.append("没有轻链高度接近的配对。同一重链框架但 CDR-H3 不同，不视为重复。")
 
     return DedupReport(
         exact_duplicates=exact,

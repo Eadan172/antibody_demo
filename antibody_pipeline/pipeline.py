@@ -107,10 +107,10 @@ def run_pipeline(
     for run in tools:
         log(f"计算 {run.name}：{run.status}。{run.detail}")
 
+    log("阶段：去冗余。比较两条路线的 VH、VL 和 CDR-H3，表位不同的配对只标注、不合并。")
+    dedup = build_dedup(candidates)
     log("阶段：快筛。用序列规则复核 PTM、过滤 CDR 糖基化并打分。")
     screen_all(candidates)
-    log("阶段：去冗余。比较两条路线的 VH、VL 和 CDR-H3。")
-    dedup = build_dedup(candidates)
     log("阶段：报告汇编。写入调研、设计、FASTA、去冗余、汇总、快筛、综合评估和日志。")
     written = write_reports(
         output_dir,

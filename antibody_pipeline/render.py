@@ -244,7 +244,7 @@ def render_dedup(report: DedupReport, candidates: Sequence[Candidate], stamp: st
         "",
         _table(["胚系", "候选"], [[row["germline"], row["candidates"]] for row in report.vl_table]),
         "",
-        "## 六、高相似配对（序列一致度 ≥ 0.90）",
+        "## 六、轻链高相似配对",
         "",
     ])
     if report.groups:
@@ -315,7 +315,7 @@ def render_screen(
         ">",
         f"> **结论性质**：{source_note}",
         "> 可开发性里的 PTM、CDR 长度和打分来自本程序的序列规则，不是结构预测，也不是湿实验。",
-        "> 只有计算软件真实回传的 iPTM/pLDDT 才会出现在「计算回传」一节。",
+        "> 只有计算软件真实回传的 iPTM/pLDDT 才会出现在「计算软件回传」一节。",
         "",
         "## 一、初筛方法",
         "",

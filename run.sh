@@ -12,7 +12,10 @@ fi
 PY="$ROOT/.venv/bin/python"
 if [[ ! -x "$PY" ]]; then
   echo "正在当前目录创建 .venv ……"
-  python3 -m venv "$ROOT/.venv"
+  if ! python3 -m venv "$ROOT/.venv"; then
+    echo "创建 .venv 失败。Debian/Ubuntu 上可先执行：sudo apt install python3-venv" >&2
+    exit 1
+  fi
 fi
 
 STAMP="$ROOT/.venv/.requirements.stamp"
