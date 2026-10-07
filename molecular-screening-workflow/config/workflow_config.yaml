@@ -1,0 +1,82 @@
+# 分子筛选工作流配置文件
+# Molecular Screening Workflow Configuration
+
+workflow:
+  name: "Molecular Screening Workflow"
+  version: "1.1.0"
+  description: "基于 RNN 的分子生成与多阶段虚拟筛选工作流"
+
+# 数据路径配置
+data:
+  rnn_train_data: "data/merged_rnn_data.csv"
+  qsar_train_data: "data/merged_qsar_data.csv"
+
+# 演示模式只替换数据路径，阈值仍使用下面的 rnn/qsar/admet/sa_score
+demo:
+  rnn_train_data: "demo/data/sample_training.csv"
+  qsar_train_data: "demo/data/sample_training.csv"
+  molecules: "demo/data/sample_molecules.csv"
+
+models:
+  rnn_model: "models/selfies_generator_rnn.keras"
+  qsar_model: "models/ultimate_ensemble_qsar_model.pkl"
+
+rnn:
+  num_molecules: 500
+  temperature: 0.7
+  top_k: 50
+  epochs: 200
+  batch_size: 128
+
+qsar:
+  # IC50 阈值，单位 nM。保留小于等于该值的分子，再取活性最好的 top_n 个
+  ic50_threshold: 100
+  top_n: 100
+  test_size: 0.2
+
+admet:
+  criteria:
+    P-gp_substrate: 0
+    P-gp_I_inhibitor: 0
+    P-gp_II_inhibitor: 0
+    CYP2D6_substrate: 0
+    CYP3A4_substrate: 0
+    CYP1A2_inhibitor: 0
+    CYP2C19_inhibitor: 0
+    CYP2C9_inhibitor: 0
+    AMES_toxicity: 0
+    hERG_II_inhibitor: 0
+    Hepatotoxicity: 0
+    Skin_Sensitisation: 0
+
+docking:
+  engines:
+    - vina
+  receptor_pdb: "pdb_files_AKT1/4gv1.pdb"
+  box:
+    center_x: 10.0
+    center_y: 20.0
+    center_z: 30.0
+    size_x: 20.0
+    size_y: 20.0
+    size_z: 20.0
+
+sa_score:
+  threshold: 6.0
+  sort: true
+
+output:
+  results_dir: "results"
+  logs_dir: "logs"
+  generated: "results/01_generated.csv"
+  qsar: "results/02_qsar.csv"
+  admet: "results/03_admet.csv"
+  docking: "results/04_docking.csv"
+  sa: "results/05_sa.csv"
+  plots: "results/evaluation_summary.png"
+  save_intermediate: true
+  generate_plots: true
+
+parallel:
+  enabled: false
+  num_workers: 4
