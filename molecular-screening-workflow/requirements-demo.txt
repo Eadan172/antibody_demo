@@ -1,0 +1,3 @@
+# 演示模式依赖。第一次运行 run_workflow.py 或 ./run.sh 时安装进项目 .venv。
+pandas>=1.3.0
+pyyaml>=5.4.0

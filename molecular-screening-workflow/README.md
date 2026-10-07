@@ -9,39 +9,52 @@
 正式生成和正式 QSAR 预测需要先单独训练。训练不会在生成失败时自动开始。
 
 ```bash
-python src/rnn_workflow.py --train
-python src/qsar_engine.py --train
-python run_workflow.py
+.venv/bin/python src/rnn_workflow.py --train
+.venv/bin/python src/qsar_engine.py --train
+.venv/bin/python run_workflow.py
 ```
 
 在线对接还需要受体 PDB 和环境变量 `NEUROSNAP_API_KEY`。当前版本只提交任务，不取回结合能。
 
 ## 环境
 
-- Python 3.8+
-- 演示模式：`pandas`、`pyyaml`
-- 真实 SA Score、描述符和 3D 结构：RDKit（建议用 conda 安装）
-- 训练 RNN：TensorFlow、SELFIES、RDKit
-- 训练 QSAR：scikit-learn、RDKit
+下载代码后在仓库根目录执行一次即可。脚本会创建 `.venv`，把 `requirements-demo.txt` 装进去，并用这个环境运行。`.venv` 只留在本机，不会进入 Git。
+
+需要本机已有 Python 3.8+。Debian/Ubuntu 如果创建环境失败，先安装 `python3-venv`。
 
 ```bash
 git clone https://github.com/Eadan172/molecular-screening-workflow.git
 cd molecular-screening-workflow
-pip install pandas pyyaml
-python run_workflow.py --demo
+bash run.sh
+```
+
+Windows 双击或在仓库根目录执行 `run.bat`。
+
+之后的命令都走同一个虚拟环境：
+
+```bash
+.venv/bin/python run_workflow.py --demo --steps qsar admet
+```
+
+Windows 对应 `.venv\Scripts\python.exe`。
+
+真实 SA Score、描述符和三维结构需要 RDKit。训练 RNN 还需要 TensorFlow 与 SELFIES，训练 QSAR 还需要 scikit-learn。这些不要装进系统 Python，装进已有的 `.venv`：
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt
 ```
 
 ## 用法
 
 ```bash
-# 演示模式，六步都跑
-python run_workflow.py --demo
+# 演示模式，六步都跑。没有 .venv 时会先创建
+bash run.sh
 
 # 只跑其中几步。顺序固定，每步读取上一步留下的 CSV
-python run_workflow.py --demo --steps qsar admet
+.venv/bin/python run_workflow.py --demo --steps qsar admet
 
 # 使用配置文件。嵌套字段会传到对应步骤
-python run_workflow.py --config config/workflow_config.yaml
+.venv/bin/python run_workflow.py --config config/workflow_config.yaml
 ```
 
 `config/workflow_config.yaml` 里实际生效的项包括：生成数量、IC50 阈值、`top_n`、ADMET 过滤值、对接引擎名、受体路径、对接盒、SA 阈值，以及下面这些输出路径。
@@ -65,11 +78,15 @@ python run_workflow.py --config config/workflow_config.yaml
 bash demo/run_demo.sh
 ```
 
+`demo/run_demo.sh` 和 `run.sh` 是同一条路径，都会使用仓库根目录的 `.venv`。
+
 `data/` 下体积较大的表目前是 Git LFS 指针文本，仓库里没有对应的 `.gitattributes`。演示流程不读取这些文件。
 
 ## 目录
 
 ```
+run.sh / run.bat             # 创建 .venv 并运行演示
+requirements-demo.txt        # .venv 里的演示依赖
 run_workflow.py              # 统一入口
 config/workflow_config.yaml
 src/rnn_workflow.py          # 生成；--train 才训练

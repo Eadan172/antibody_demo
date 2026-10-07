@@ -7,10 +7,19 @@ RNN 分子生成。
 - 演示模式复制 demo/data/sample_molecules.csv，不加载 TensorFlow
 - 普通生成只加载已经训练好的模型
 - 训练需要显式执行 python src/rnn_workflow.py --train
+直接执行本文件时，会自动使用项目根目录的 .venv。
 """
 
-import json
 import os
+import sys
+
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from venv_bootstrap import ensure_project_venv
+
+    ensure_project_venv()
+
+import json
 
 import pandas as pd
 

@@ -6,10 +6,19 @@ QSAR 活性预测。
 演示模式用确定性占位分数，不训练模型。
 正式预测只加载已经保存的 pipeline。
 训练需要显式执行 python src/qsar_engine.py --train。
+直接执行本文件时，会自动使用项目根目录的 .venv。
 """
 
-import math
 import os
+import sys
+
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from venv_bootstrap import ensure_project_venv
+
+    ensure_project_venv()
+
+import math
 import pickle
 
 import pandas as pd

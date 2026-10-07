@@ -9,19 +9,26 @@
 
 每一步都从约定的 CSV 读取、写到下一份 CSV，因此中断后可以用 --steps 从该步继续。
 演示模式不训练模型，也不访问网络。
+直接执行本文件时，会自动创建并使用项目根目录的 .venv。
 """
 
-import argparse
-import logging
 import os
 import sys
-import time
-import traceback
-from datetime import datetime
 
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)
+
+if __name__ == "__main__":
+    from venv_bootstrap import ensure_project_venv
+
+    ensure_project_venv()
+
+import argparse
+import logging
+import time
+import traceback
+from datetime import datetime
 
 from admet_engine import run_admet_filter
 from config_loader import load_raw_config, resolve_config
